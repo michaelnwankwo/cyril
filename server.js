@@ -19,6 +19,24 @@ const fs = require("fs");
 const path = require("path");
 const https = require("https");
 
+/* ---------------- Load .env if present (zero dependencies) ---------------- */
+(function loadEnv() {
+  try {
+    const envPath = path.join(__dirname, ".env");
+    if (!fs.existsSync(envPath)) return;
+    fs.readFileSync(envPath, "utf8").split(/\r?\n/).forEach(function (line) {
+      line = line.trim();
+      if (!line || line[0] === "#") return;
+      const eq = line.indexOf("=");
+      if (eq === -1) return;
+      const key = line.slice(0, eq).trim();
+      let val = line.slice(eq + 1).trim();
+      if ((val[0] === '"' && val[val.length - 1] === '"') || (val[0] === "'" && val[val.length - 1] === "'")) val = val.slice(1, -1);
+      if (key && process.env[key] === undefined) process.env[key] = val;
+    });
+  } catch (e) { /* .env is optional */ }
+})();
+
 /* ---------------- Configuration (env-driven) ---------------- */
 const config = {
   port: process.env.PORT || 3000,
@@ -46,12 +64,21 @@ const config = {
 
 const app = express();
 
-/* ---- Kitchen portal security ----
-   PIN is verified server-side against KITCHEN_PIN (default 8818 — CHANGE in prod).
-   A successful login mints an HMAC-signed session token (no JWT dependency). */
+/* ---- Kitchen portal security (passwordless magic-link) ----
+   Staff enter an authorized email; the server emails a single-use link (valid
+   10 min). Clicking it mints an HMAC-signed session token that lasts exactly
+   24 hours (86,400 s). The old PIN endpoint remains as a private break-glass. */
 const KITCHEN_PIN = process.env.KITCHEN_PIN || "8818";
 const TOKEN_SECRET = process.env.TOKEN_SECRET || process.env.PAYSTACK_SECRET_KEY || ("cyrils-kitchen-" + KITCHEN_PIN);
-const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
+const SESSION_TTL_SEC = 86400;                       // 24 hours
+const SESSION_TTL_MS = SESSION_TTL_SEC * 1000;
+const MAGIC_TTL_SEC = 600;                           // 10 minutes
+const MAGIC_TTL_MS = MAGIC_TTL_SEC * 1000;
+// Authorized staff inbox(es). Comma-separate in KITCHEN_EMAILS to add more.
+const KITCHEN_EMAILS = (process.env.KITCHEN_EMAILS || "kitchen@cyrilfoods.com.ng")
+  .split(",").map(function (s) { return s.trim().toLowerCase(); }).filter(Boolean);
+// Single-use magic codes, keyed by token: { email, exp }
+const magicCodes = new Map();
 
 function b64url(s) { return Buffer.from(s).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
 function signToken(payload) {
@@ -87,8 +114,29 @@ function requireKitchen(req, res, next) {
 
 /* Raw body is required for Paystack signature verification — BEFORE json parser. */
 app.use("/api/paystack/webhook", express.raw({ type: "*/*" }));
+/* ---- CORS: let a separately-hosted frontend (e.g. Netlify static) call us ----
+   Set CORS_ORIGIN to your exact site (recommended), or leave * for any origin. */
+const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
+app.use(function (req, res, next) {
+  const origin = req.headers.origin;
+  if (CORS_ORIGIN === "*") res.setHeader("Access-Control-Allow-Origin", "*");
+  else if (origin && (CORS_ORIGIN.split(",").map(function (s) { return s.trim(); }).indexOf(origin) !== -1))
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 app.use(express.json({ limit: "1mb" }));
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, { dotfiles: "deny" })); // never serve .env, .git, etc.
+// Belt-and-suspenders: hard 404 for any dotfile request (.env, .git/*, …) so the
+// SPA fallback can never mask them with a 200.
+app.use(function (req, res, next) {
+  if (/\/\.[^/]*/.test(new URL(req.url, "http://x").pathname)) return res.status(404).send("Not found");
+  next();
+});
 
 /* ---- Staff overrides state (manual closed / sold-out items) ---- */
 const kitchenStatusFile = path.join(__dirname, "kitchen-status.json");
@@ -110,8 +158,70 @@ app.post("/api/kitchen/login", function (req, res) {
     try { ok = crypto.timingSafeEqual(Buffer.from(pin), Buffer.from(expected)); } catch (e) { ok = false; }
   }
   if (!ok) return res.status(401).json({ status: "error", message: "Incorrect kitchen passcode." });
-  const token = signToken({ role: "kitchen", exp: Date.now() + TOKEN_TTL_MS });
-  res.json({ status: "ok", token: token, expiresIn: TOKEN_TTL_MS / 1000 });
+  const token = signToken({ role: "kitchen", exp: Date.now() + SESSION_TTL_MS });
+  res.json({ status: "ok", token: token, expiresIn: SESSION_TTL_SEC });
+});
+
+/* ---- Passwordless magic-link auth ---- */
+function publicBaseUrl(req) {
+  return process.env.PUBLIC_URL ||
+    (req && req.protocol && req.get ? req.protocol + "://" + req.get("host") : "http://localhost:3000");
+}
+// Best-effort email delivery. Configure one provider; otherwise the link is
+// printed to the server console (fine for local/dev / VPS logs).
+function sendStaffEmail(to, link) {
+  const subject = "Cyril's Foods kitchen — sign-in link";
+  const text = "Your Cyril's Foods kitchen sign-in link (valid 10 minutes, single use):\n\n" + link +
+    "\n\nIf you didn't request this, ignore this email.";
+  // 1) Generic email webhook (e.g. Resend, Brevo, Mailgun, Zapier) — POST JSON.
+  const hook = process.env.EMAIL_WEBHOOK_URL;
+  if (hook) {
+    return new Promise(function (resolve) {
+      const u = new URL(hook);
+      const payload = JSON.stringify({ to: to, subject: subject, text: text, html: text.replace(/\n/g, "<br>") });
+      const reqMod = u.protocol === "https:" ? https : require("http");
+      const r = reqMod.request({ hostname: u.hostname, port: u.port || (u.protocol === "https:" ? 443 : 80),
+        path: u.pathname + u.search, method: "POST",
+        headers: { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(payload),
+          ...(process.env.EMAIL_WEBHOOK_KEY ? { Authorization: "Bearer " + process.env.EMAIL_WEBHOOK_KEY } : {}) } },
+      function (resp) { resp.resume(); resp.on("end", function () { resolve(resp.statusCode < 300); }); });
+      r.on("error", function () { resolve(false); }); r.write(payload); r.end();
+    });
+  }
+  // 2) Fallback: surface the link in the server log.
+  console.log("\n🔐 KITCHEN MAGIC LINK → " + to + "\n   " + link + "\n");
+  return Promise.resolve(true);
+}
+
+function handleMagicRequest(req, res) {
+  const email = String((req.body && req.body.email) || "").trim().toLowerCase();
+  const authorized = KITCHEN_EMAILS.indexOf(email) !== -1;
+  // Always return a generic success to avoid revealing which emails are valid.
+  if (authorized) {
+    const code = crypto.randomBytes(24).toString("hex");
+    magicCodes.set(code, { email: email, exp: Date.now() + MAGIC_TTL_MS });
+    // sweep expired
+    const now = Date.now();
+    magicCodes.forEach(function (v, k) { if (v.exp < now) magicCodes.delete(k); });
+    const link = publicBaseUrl(req) + "/api/kitchen/magic-verify?code=" + code;
+    sendStaffEmail(email, link);
+  }
+  res.json({ status: "ok", message: "If that email is authorized, a sign-in link is on its way." });
+}
+app.post("/api/kitchen/magic-request", handleMagicRequest);
+app.post("/api/auth/magic-link", handleMagicRequest); // canonical alias
+
+// Magic-link landing: verify the single-use code, mint a 24h session, redirect.
+app.get("/api/kitchen/magic-verify", function (req, res) {
+  const code = String(req.query.code || "");
+  const rec = magicCodes.get(code);
+  if (!rec || rec.exp < Date.now()) {
+    magicCodes.delete(code);
+    return res.redirect("/kitchen.html?auth=denied");
+  }
+  magicCodes.delete(code); // single use
+  const token = signToken({ role: "kitchen", email: rec.email, exp: Date.now() + SESSION_TTL_MS });
+  res.redirect("/kitchen.html#authed=" + encodeURIComponent(token));
 });
 
 /* Authenticated kitchen endpoints */

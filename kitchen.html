@@ -15,16 +15,17 @@
 </head>
 <body data-page="kitchen" class="kitchen-body">
 
-  <!-- PIN gate -->
+  <!-- Staff gate (passwordless magic link) -->
   <div class="kpin" id="pinGate">
-    <form class="kpin__card" id="pinForm" autocomplete="off">
+    <form class="kpin__card" id="magicForm" autocomplete="off">
       <img src="assets/logo.png" alt="" class="kpin__logo" />
       <h1>Kitchen Portal</h1>
-      <p class="kpin__sub">Authorized staff only. Enter your 4–6 digit kitchen passcode.</p>
-      <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6"
-             placeholder="••••" aria-label="Kitchen passcode" required />
-      <button type="submit" class="btn btn--primary" id="pinSubmit" style="width:100%;justify-content:center">Unlock</button>
-      <p class="kpin__error" id="pinError" hidden>Incorrect passcode. Try again.</p>
+      <p class="kpin__sub">Authorized staff only. Enter your staff email to receive a one-time sign-in link.</p>
+      <input type="email" id="magicEmail" autocomplete="email" placeholder="kitchen@cyrilfoods.com.ng"
+             aria-label="Staff email" required />
+      <button type="submit" class="btn btn--primary" id="magicSubmit" style="width:100%;justify-content:center">Email me a sign-in link</button>
+      <p class="kpin__error" id="magicNote" hidden></p>
+      <p class="kpin__hint">The link expires in <strong>10 minutes</strong> and keeps this device signed in for <strong>24 hours</strong>.</p>
       <a href="index.html" class="kpin__back">← Back to site</a>
     </form>
   </div>

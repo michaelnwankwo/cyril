@@ -19,7 +19,13 @@
 
   /* ---------------- Config & state ---------------- */
   var CONFIG = {
-    apiBase: window.location.origin && window.location.origin.indexOf("http") === 0 ? window.location.origin : "",
+    // Backend origin. On a Node host this is the same site; on static hosting
+    // (e.g. Netlify) set window.CYRIL_API_BASE to the deployed server URL.
+    apiBase: window.CYRIL_API_BASE
+      || (window.location.origin && window.location.origin.indexOf("http") === 0 ? window.location.origin : ""),
+    // Optional Supabase Auth for fully-static magic links (set both to enable).
+    supabaseUrl: window.CYRIL_SUPABASE_URL || "",
+    supabaseAnonKey: window.CYRIL_SUPABASE_ANON_KEY || "",
     paystackKey: window.CYRIL_PAYSTACK_PK || "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     googleMapsKey: window.CYRIL_GOOGLE_MAPS_KEY || "",
     ratePerKm: BRAND.ratePerKm,
@@ -548,16 +554,15 @@
     updateFabCart();
   }
 
-  /* Floating sticky cart bar (all public pages) */
+  /* Compact floating cart FAB (icon + count badge only; total lives in the drawer) */
   function updateFabCart() {
     var fab = $("#fabCart");
     if (!fab) return;
     var n = cartCount();
     fab.classList.add("is-shown");
     fab.classList.toggle("has-items", n > 0);
-    var cEl = $("#fabCartCount"); if (cEl) cEl.textContent = n;
-    var tEl = $("#fabCartTotal"); if (tEl) tEl.textContent = money(cartSubtotal());
-    var mEl = $("#fabCartMeta"); if (mEl) mEl.textContent = n ? n + (n === 1 ? " item in cart" : " items in cart") : "Your cart";
+    fab.setAttribute("aria-label", n ? "View cart — " + n + " item" + (n === 1 ? "" : "s") : "View cart");
+    var cEl = $("#fabCartCount"); if (cEl) cEl.textContent = n > 99 ? "99+" : n;
   }
 
   function saveCart() { try { localStorage.setItem("cyrils_cart", JSON.stringify(state.cart)); } catch (e) {} }
@@ -716,10 +721,9 @@
       '<a class="fab-wa" href="https://wa.me/2348081988184?text=Hello%20Cyril%27s%20Foods!%20I%20want%20to%20order." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">' +
         '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.512 5.26l-.999 3.648 3.976-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></a>' +
 
-      // Floating sticky cart bar — every public page (opens cart drawer anywhere).
+      // Compact floating cart FAB — every public page (icon + count badge only).
       '<button class="fab-cart" id="fabCart" aria-label="View cart">' +
-        '<span class="fab-cart__icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>' +
-        '<span class="fab-cart__label"><small id="fabCartMeta">Your cart</small><strong id="fabCartTotal">₦0</strong></span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>' +
         '<span class="fab-cart__count" id="fabCartCount">0</span>' +
       "</button>" +
 
@@ -796,6 +800,21 @@
           '<button class="btn btn--primary" data-close-modal style="width:100%;justify-content:center">Got it</button>' +
         "</div></div></div>" +
 
+      // Hidden staff (kitchen) access modal — only reachable via the triple-tap gesture.
+      '<div class="modal" id="staffModal" aria-hidden="true"><div class="modal__backdrop" data-close-modal></div>' +
+        '<div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="staffTitle">' +
+        '<button class="modal__close" data-close-modal aria-label="Close">&times;</button>' +
+        '<form id="staffForm" class="staff-auth">' +
+          '<span class="staff-auth__icon">🔐</span>' +
+          '<h3 id="staffTitle">Staff Access</h3>' +
+          '<p class="staff-auth__sub">Enter your authorized staff email and we\'ll send a one-time sign-in link. The link expires in 10 minutes and keeps this device signed in for 24 hours.</p>' +
+          '<div class="field"><label for="staffEmail">Staff email</label>' +
+            '<input type="email" id="staffEmail" autocomplete="email" placeholder="kitchen@cyrilfoods.com.ng" required /></div>' +
+          '<button type="submit" class="btn btn--primary" id="staffSubmit" style="width:100%;justify-content:center">Email me a sign-in link</button>' +
+          '<p class="staff-auth__note" id="staffNote" hidden></p>' +
+        '</form>' +
+        '</div></div>' +
+
       '<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>';
     document.body.appendChild(holder);
   }
@@ -847,6 +866,119 @@
         });
       });
     }
+  }
+
+  /* ---------------- Secret kitchen entry: 3 quick taps on the logo ----------------
+     Customers never see a link. Staff tap the header logo (or footer logo) three
+     times within 1.5s to open the hidden Staff Access (magic-link) modal. A normal
+     single tap on the header logo still navigates home as usual. */
+  function initSecretTap() {
+    var taps = 0, timer = null;
+    var WINDOW = 1500; // 1.5 seconds
+    function hit(e) {
+      taps++;
+      if (timer) clearTimeout(timer);
+      if (taps >= 3) {
+        taps = 0; clearTimeout(timer);
+        e.preventDefault(); e.stopPropagation();
+        openModal("#staffModal");
+        var em = $("#staffEmail"); if (em) setTimeout(function () { em.focus(); }, 250);
+        return;
+      }
+      // Header logo is a home link: briefly hold its normal navigation so three
+      // fast taps can be detected; a lone tap still goes home after the wait.
+      if (e.currentTarget && e.currentTarget.tagName === "A") {
+        e.preventDefault();
+        timer = setTimeout(function () { taps = 0; location.href = "index.html"; }, 450);
+      } else {
+        timer = setTimeout(function () { taps = 0; }, WINDOW);
+      }
+    }
+    var header = $(".nav__brand");
+    if (header) header.addEventListener("click", hit);
+    var footer = $(".footer__brand img, .footer__brand");
+    if (footer) {
+      footer.style.cursor = "pointer";
+      footer.addEventListener("click", hit);
+    }
+  }
+
+  /* Staff magic-link request.
+     - If Supabase keys are configured (static hosting), use signInWithOtp directly.
+     - Otherwise POST to the Node backend, with clear success/error UI states. */
+  function setStaffNote(kind, msg) {
+    var note = $("#staffNote"); if (!note) return;
+    note.hidden = false;
+    note.classList.remove("is-ok", "is-err");
+    if (kind) note.classList.add(kind === "ok" ? "is-ok" : "is-err");
+    note.textContent = msg;
+  }
+  function requestViaSupabase(email) {
+    if (window.supabase && window.supabase.createClient) return Promise.resolve();
+    // Load the Supabase JS SDK on demand, then create the client.
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
+      s.onload = resolve; s.onerror = function () { reject(new Error("sdk")); };
+      document.head.appendChild(s);
+    }).then(function () {
+      window.__sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+    });
+  }
+  function initStaffAuth() {
+    var form = $("#staffForm"); if (!form) return;
+    var btn = $("#staffSubmit");
+    var DEFAULT_BTN = btn ? btn.textContent : "Email me a sign-in link";
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var email = ($("#staffEmail").value || "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setStaffNote("err", "Please enter a valid email address."); return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = "Sending magic link…"; }
+      setStaffNote("", "Sending magic link…");
+
+      var useSupabase = !!(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
+      var p;
+      if (useSupabase) {
+        p = requestViaSupabase(email).then(function () {
+          return window.__sb.auth.signInWithOtp({
+            email: email,
+            options: { emailRedirectTo: window.location.origin + "/kitchen.html" }
+          });
+        }).then(function (resp) {
+          if (resp && resp.error) throw new Error(resp.error.message || "auth error");
+          return { ok: true };
+        });
+      } else {
+        p = fetch(CONFIG.apiBase + "/api/kitchen/magic-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify({ email: email })
+        }).then(function (r) {
+          var ct = r.headers.get("content-type") || "";
+          if (ct.indexOf("application/json") === -1) {
+            // Backend not reachable (static host returning HTML) — not a crash.
+            var err = new Error("no-backend"); err.status = r.status; throw err;
+          }
+          return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+        });
+      }
+
+      p.then(function () {
+        setStaffNote("ok", "✓ Check your email inbox! We've sent a sign-in link — tap it on this device to open the kitchen.");
+      }).catch(function (err) {
+        if (err && err.message === "no-backend") {
+          setStaffNote("err", "Staff login is configured for the hosted backend. Contact the administrator to enable it on this site, or visit the kitchen directly if you have a link.");
+        } else if (err && /sdk|failed to fetch|network/i.test(String(err && err.message))) {
+          setStaffNote("err", "Couldn't reach the login service. Check your connection and try again.");
+        } else {
+          setStaffNote("err", (err && err.message) ? err.message : "That email isn't authorized for staff access.");
+        }
+      }).finally(function () {
+        if (btn) { btn.disabled = false; btn.textContent = DEFAULT_BTN; }
+      });
+    });
   }
 
   /* ---------------- Wire shared controls ---------------- */
@@ -925,6 +1057,8 @@
     renderCart();
     bumpBadge();
     initNav();
+    initSecretTap();
+    initStaffAuth();
     initSharedControls();
     fetchKitchenStatus();
     setInterval(fetchKitchenStatus, 45 * 1000); // pick up staff closed / sold-out overrides

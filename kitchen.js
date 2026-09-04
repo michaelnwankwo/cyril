@@ -46,24 +46,49 @@
   }
   function stopChime() { if (chimeTimer) { clearInterval(chimeTimer); chimeTimer = null; } }
 
-  /* ---------- Auth ---------- */
-  async function login(pin) {
-    var res = await fetch("/api/kitchen/login", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pin: pin })
-    });
+  /* ---------- Auth (passwordless magic link, 24-hour session) ---------- */
+  async function requestMagicLink(email) {
+    var res;
+    try {
+      res = await fetch("/api/kitchen/magic-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ email: email })
+      });
+    } catch (e) {
+      throw new Error("Couldn't reach the login service. Check your connection and try again.");
+    }
+    var ct = res.headers.get("content-type") || "";
+    if (ct.indexOf("application/json") === -1) {
+      throw new Error("The kitchen service isn't running here. Open this page from the correct server address.");
+    }
     var data = await res.json().catch(function () { return {}; });
-    if (!res.ok || data.status !== "ok" || !data.token) throw new Error(data.message || "Login failed");
-    token = data.token;
-    localStorage.setItem(TOKEN_KEY, token);
-    return token;
+    if (!res.ok) throw new Error(data.message || "Request failed. Please try again.");
+    return data;
+  }
+  function storeToken(t) {
+    token = t;
+    try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
+  }
+  // Pull a session token off the magic-link redirect hash (#authed=...), validate it.
+  function consumeHashToken() {
+    var h = (location.hash || "").replace(/^#/, "");
+    var m = h.match(/(?:^|&)authed=([^&]+)/);
+    if (m && m[1]) {
+      storeToken(decodeURIComponent(m[1]));
+      history.replaceState(null, "", location.pathname); // scrub token from the URL
+      return true;
+    }
+    return false;
   }
   function logout() {
-    token = null; localStorage.removeItem(TOKEN_KEY);
+    token = null; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
     if (state.evt) { try { state.evt.close(); } catch (e) {} state.evt = null; }
     stopChime();
     $("dash").hidden = true; $("dash").classList.remove("is-auth");
     $("pinGate").style.display = "grid";
-    $("pinInput").value = ""; $("pinInput").focus();
+    var em = $("magicEmail"); if (em) em.value = "";
+    var note = $("magicNote"); if (note) note.hidden = true;
   }
 
   /* ---------- Data helpers ---------- */
@@ -213,38 +238,42 @@
   }
 
   async function tryEnter() {
-    $("pinError").hidden = true;
-    $("pinSubmit").disabled = true; $("pinSubmit").textContent = "Unlocking…";
+    var note = $("magicNote");
+    // Arriving from an email link carries the fresh 24h token in the hash.
+    consumeHashToken();
+    if (!token) { $("pinGate").style.display = "grid"; return; }
+    // Validate the stored/arrived token against the server.
     try {
-      if (!token) throw new Error("no token");
-      // Validate stored token.
       var r = await fetch("/api/kitchen/orders", { headers: { Authorization: "Bearer " + token } });
-      if (r.status === 401 || r.status === 403) { token = null; localStorage.removeItem(TOKEN_KEY); throw new Error("expired"); }
+      if (r.status === 401 || r.status === 403) { logout(); return; }
       showDashboard();
     } catch (e) {
-      $("pinGate").style.display = "grid";
-      $("pinInput").focus();
-    } finally {
-      $("pinSubmit").disabled = false; $("pinSubmit").textContent = "Unlock";
+      // Offline / blip: still show the dashboard; SSE retries on its own.
+      showDashboard();
     }
+    // Surface an explicit message if verification denied.
+    if (/auth=denied/.test(location.search) && note) { note.hidden = false; note.textContent = "That link was invalid or expired. Request a new one."; }
   }
 
   /* ---------- Events ---------- */
   function init() {
-    // catalog.js exposes window.CYRIL.MENU; nothing else to wire up.
-
-    $("pinForm").addEventListener("submit", async function (e) {
+    $("magicForm").addEventListener("submit", async function (e) {
       e.preventDefault();
-      var pin = ($("pinInput").value || "").trim();
-      $("pinError").hidden = true; $("pinSubmit").disabled = true; $("pinSubmit").textContent = "Unlocking…";
+      var email = ($("magicEmail").value || "").trim().toLowerCase();
+      var note = $("magicNote"), btn = $("magicSubmit");
+      note.hidden = true;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        note.hidden = false; note.textContent = "Please enter a valid email address."; return;
+      }
+      btn.disabled = true; btn.textContent = "Sending…";
       try {
-        await login(pin);
-        showDashboard();
+        await requestMagicLink(email);
+        note.hidden = false; note.classList.add("is-ok");
+        note.textContent = "✓ If that's an authorized staff email, a sign-in link is on its way. Open it on this device to enter the kitchen.";
       } catch (err) {
-        $("pinError").hidden = false;
-        $("pinInput").select();
+        note.hidden = false; note.classList.remove("is-ok"); note.textContent = "Network error — try again.";
       } finally {
-        $("pinSubmit").disabled = false; $("pinSubmit").textContent = "Unlock";
+        btn.disabled = false; btn.textContent = "Email me a sign-in link";
       }
     });
 

@@ -1,0 +1,13 @@
+# Secrets & local config
+.env
+
+# Runtime data (orders, kitchen overrides)
+orders.json
+kitchen-status.json
+
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# OS / editor
+.DS_Store

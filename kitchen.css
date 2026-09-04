@@ -17,6 +17,8 @@
   padding: .9rem 1rem; border: 2px solid var(--line); border-radius: 14px; outline: none; transition: border .2s; }
 #pinInput:focus { border-color: var(--green-500); }
 .kpin__error { color: #c0392b; font-weight: 600; font-size: .9rem; }
+.kpin__error.is-ok { color: var(--green-800); }
+.kpin__hint { color: var(--ink-300); font-size: .8rem; line-height: 1.5; }
 .kpin__back { color: var(--ink-500); font-size: .88rem; text-decoration: underline; margin-top: .3rem; }
 
 /* ---------- Dashboard ---------- */
