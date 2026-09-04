@@ -868,6 +868,128 @@
     }
   }
 
+  /* ---------------- Skewed category carousel (React-Bits style marquee) ----------
+     Infinite perspective marquee: cards skew/rotate/scale based on their distance
+     from the viewport centre. Auto-scrolls, drag/scroll/wheel enabled, seamless loop. */
+  function initSkewCarousel() {
+    var track = $("#catRail"); if (!track) return;
+    var viewport = track.closest(".skew-cats__viewport") || track.parentElement;
+    var cardHTML = function () {
+      return CATS.map(function (c) {
+        return '<button type="button" class="cat-card" data-cat="' + c.id + '" aria-label="Browse ' + esc(c.label) + '">' +
+          '<img src="' + c.img + '" alt="' + esc(c.label) + '" loading="lazy" draggable="false" />' +
+          '<span class="cat-card__label"><span class="cat-card__emoji">' + c.emoji + "</span>" +
+          '<span class="cat-card__name">' + esc(c.label) + "</span></span></button>";
+      }).join("");
+    };
+    track.innerHTML = cardHTML() + cardHTML(); // duplicated set for a seamless loop
+    var cards = Array.prototype.slice.call(track.querySelectorAll(".cat-card"));
+
+    var reduceMotion = false;
+    try { reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+
+    var offset = 0;            // current translate px (negative = moving left)
+    var speed = reduceMotion ? 0 : -46;       // base auto-scroll px/s (negative → drifts leftward)
+    var vel = 0;               // drag release momentum
+    var half = 0;              // width of one set of cards (loop length)
+    var raf = null, last = null;
+    var dragging = false, down = false, startX = 0, startOff = 0, moved = 0;
+
+    function measure() {
+      // width of the FIRST set = half the full duplicated track
+      half = cards.length ? (track.scrollWidth / 2) : 0;
+    }
+
+    function styleCards() {
+      var vw = viewport.clientWidth || window.innerWidth;
+      var center = vw / 2;
+      for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var r = card.getBoundingClientRect();
+        var vr = viewport.getBoundingClientRect();
+        var cardCenter = r.left - vr.left + r.width / 2;
+        var d = (cardCenter - center) / (vw * 0.42);   // normalized distance
+        if (d > 1) d = 1; else if (d < -1) d = -1;
+        var abs = Math.abs(d);
+        var rotY = -22 * d;          // edge cards tilt away, centre faces forward
+        var scale = 1 - 0.22 * abs;  // centre largest
+        var ty = 7 * abs;            // edges settle slightly lower
+        var bright = 1 - 0.28 * abs;
+        card.style.transform =
+          "translateY(" + ty.toFixed(2) + "px) rotateY(" + rotY.toFixed(2) + "deg) scale(" + scale.toFixed(3) + ")";
+        card.style.filter = "brightness(" + bright.toFixed(3) + ")";
+        card.style.zIndex = String(100 - Math.round(abs * 100));
+        card.classList.toggle("is-center", abs < 0.18);
+      }
+    }
+
+    function frame(ts) {
+      if (last == null) last = ts;
+      var dt = Math.min(50, ts - last) / 1000;
+      last = ts;
+      if (!down) {
+        offset += (speed + vel) * dt;
+        // ease momentum back toward zero
+        vel *= Math.pow(0.06, dt);          // friction
+        if (Math.abs(vel) < 1) vel = 0;
+      }
+      if (half > 0) {
+        // wrap into one set's width for an endless loop
+        if (offset <= -half) offset += half;
+        if (offset > 0) offset -= half;
+      }
+      track.style.transform = "translate3d(" + offset.toFixed(2) + "px,0,0)";
+      styleCards();
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() { if (raf == null) { last = null; raf = requestAnimationFrame(frame); } }
+    function stop() { if (raf != null) { cancelAnimationFrame(raf); raf = null; } }
+
+    // --- interaction: pointer drag / wheel ---
+    viewport.addEventListener("pointerdown", function (e) {
+      down = true; dragging = false; moved = 0;
+      startX = e.clientX; startOff = offset; vel = 0;
+      viewport.classList.add("is-dragging");
+      try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    window.addEventListener("pointermove", function (e) {
+      if (!down) return;
+      var dx = e.clientX - startX;
+      if (Math.abs(dx) > 6) dragging = true;
+      moved = Math.abs(dx);
+      offset = startOff + dx;
+    });
+    window.addEventListener("pointerup", function (e) {
+      if (!down) return;
+      down = false;
+      viewport.classList.remove("is-dragging");
+      try { viewport.releasePointerCapture(e.pointerId); } catch (err) {}
+    });
+    viewport.addEventListener("wheel", function (e) {
+      var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!d) return;
+      e.preventDefault();
+      offset += d * 0.6;
+      vel = d * 6;          // nudge momentum in scroll direction
+    }, { passive: false });
+
+    // tap (not drag) → deep-link to the menu category
+    track.addEventListener("click", function (e) {
+      if (dragging || moved > 8) { e.preventDefault(); return; }
+      var card = e.target.closest(".cat-card");
+      if (card) location.href = "menu.html?cat=" + encodeURIComponent(card.getAttribute("data-cat"));
+    });
+
+    window.addEventListener("resize", function () { measure(); });
+    document.addEventListener("visibilitychange", function () { document.hidden ? stop() : start(); });
+
+    measure();
+    // wait one frame for images/layout, then size + run
+    requestAnimationFrame(function () { measure(); styleCards(); start(); });
+    if (viewport) viewport.classList.add("is-hoverable");
+  }
+
   /* ---------------- Secret kitchen entry: 3 quick taps on the logo ----------------
      Customers never see a link. Staff tap the header logo (or footer logo) three
      times within 1.5s to open the hidden Staff Access (magic-link) modal. A normal
@@ -1079,20 +1201,8 @@
       renderFeatured();
     }
 
-    // Home category rail -> menu page deep link
-    var catRail = $("#catRail");
-    if (catRail) {
-      catRail.innerHTML = CATS.map(function (c) {
-        return '<button class="cat-card" data-cat="' + c.id + '" aria-label="Browse ' + esc(c.label) + '">' +
-          '<img src="' + c.img + '" alt="' + esc(c.label) + '" loading="lazy" />' +
-          '<span class="cat-card__label"><span class="cat-card__emoji">' + c.emoji + "</span>" +
-          '<span class="cat-card__name">' + esc(c.label) + "</span></span></button>";
-      }).join("");
-      catRail.addEventListener("click", function (e) {
-        var card = e.target.closest(".cat-card");
-        if (card) location.href = "menu.html?cat=" + encodeURIComponent(card.getAttribute("data-cat"));
-      });
-    }
+    // Home category skewed carousel -> menu page deep link
+    initSkewCarousel();
 
     // Home stat counter
     var statEl = $("[data-stat]");

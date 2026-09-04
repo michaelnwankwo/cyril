@@ -215,18 +215,66 @@ input, select { font-family: inherit; font-size: 1rem; }
 .section-head__title span { color: var(--orange-600); font-style: italic; }
 .section-head__sub { color: var(--ink-500); margin-top: .6rem; }
 
-/* ---------- Category rail ---------- */
-.cats { padding: 64px 0 8px; }
-.cats__rail { display: grid; grid-template-columns: repeat(9, 1fr); gap: .9rem; }
-.cat-card { position: relative; border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 3/4;
-  box-shadow: var(--shadow-sm); transition: transform .25s var(--ease), box-shadow .25s; cursor: pointer; border: none; }
-.cat-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
-.cat-card img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s var(--ease); }
-.cat-card:hover img { transform: scale(1.08); }
-.cat-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(20,40,25,.78)); }
-.cat-card__label { position: absolute; left: .6rem; right: .6rem; bottom: .6rem; z-index: 2; color: #fff; text-align: center; }
-.cat-card__emoji { font-size: 1.4rem; }
-.cat-card__name { font-weight: 700; font-size: .86rem; line-height: 1.2; display: block; }
+/* ---------- Category rail (Skewed Carousel — React-Bits style marquee) ---------- */
+.cats { padding: 64px 0 24px; }
+
+/* Outer clipped viewport — hides overflow & the off-screen cards. */
+.skew-cats { position: relative; margin-top: 2rem; }
+.skew-cats__viewport {
+  position: relative; width: 100%; overflow: hidden;
+  perspective: 1200px;
+  padding: 34px 0;                 /* breathing room for the tilted/raised cards */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  cursor: grab;
+}
+.skew-cats__viewport.is-dragging { cursor: grabbing; }
+
+/* The static slant applied to the whole moving strip. */
+.skew-cats__tilt {
+  transform: rotateX(14deg) rotateZ(-2deg) scale(1.02);
+  transform-style: preserve-3d;
+}
+.skew-track {
+  display: flex; gap: 1.1rem; width: max-content;
+  will-change: transform;
+  transform: translate3d(0,0,0);
+}
+
+.cat-card {
+  position: relative; flex: 0 0 auto; width: 196px; aspect-ratio: 3/4;
+  border-radius: 18px; overflow: hidden; border: none; cursor: pointer;
+  box-shadow: var(--shadow-md);
+  /* per-card tilt/scale is set by JS via inline transform (fallback static tilt) */
+  transform: rotateY(-18deg) scale(.92);
+  transition: box-shadow .25s var(--ease);
+  transform-style: preserve-3d;
+  -webkit-user-select: none; user-select: none;
+}
+.cat-card img { width: 100%; height: 100%; object-fit: cover; }
+.cat-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0) 32%, rgba(16,34,20,.82)); }
+.cat-card__label { position: absolute; left: .5rem; right: .5rem; bottom: .85rem; z-index: 2; color: #fff; text-align: center; }
+.cat-card__emoji { font-size: 1.5rem; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+.cat-card__name { font-weight: 800; font-size: .95rem; line-height: 1.15; display: block; letter-spacing: .01em; }
+
+/* Center card in focus pops forward; JS targets .is-center too. */
+.cat-card.is-center { box-shadow: 0 26px 55px rgba(240,112,0,.38); }
+.skew-cats__viewport.is-hoverable .cat-card:hover { box-shadow: 0 24px 50px rgba(20,50,25,.5); }
+.skew-cats__hint { text-align: center; margin-top: .4rem; font-size: .8rem; color: var(--ink-300); font-weight: 600; letter-spacing: .02em; }
+
+@media (max-width: 720px) {
+  .skew-cats__viewport { padding: 26px 0; }
+  .skew-cats__tilt { transform: rotateX(11deg) rotateZ(-1.5deg) scale(1.01); }
+  .skew-track { gap: .85rem; }
+  .cat-card { width: 150px; border-radius: 15px; transform: rotateY(-16deg) scale(.9); }
+  .cat-card__name { font-size: .84rem; }
+}
+/* Respect reduced-motion: flatten the static slant; JS also stops auto-scroll. */
+@media (prefers-reduced-motion: reduce) {
+  .skew-cats__tilt { transform: none; }
+  .cat-card { transform: none; }
+  .skew-track { transition: none; }
+}
 
 /* ---------- Menu (cards, chips, search) — shared by home + menu page ---------- */
 .menu__controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.8rem; }
@@ -571,7 +619,6 @@ iframe[src*="netlify"], a[href*="app.netlify.com/drop"], #netlify-badge-containe
   .hero__grid, .delivery__grid, .about__grid { grid-template-columns: 1fr; gap: 2.5rem; }
   .hero__visual { height: 460px; max-width: 520px; margin-inline: auto; width: 100%; }
   .about__gallery { max-width: 520px; margin-inline: auto; width: 100%; }
-  .cats__rail { grid-template-columns: repeat(5, 1fr); }
   .footer__grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -609,7 +656,6 @@ iframe[src*="netlify"], a[href*="app.netlify.com/drop"], #netlify-badge-containe
   .item-modal { grid-template-columns: 1fr; }
   .item-modal__img { min-height: 200px; }
   .item-modal__img img { border-radius: var(--radius) var(--radius) 0 0; }
-  .cats__rail { grid-template-columns: repeat(3, 1fr); }
 
   /* Mobile menu: clean 2-column card grid (3 on wider small screens). */
   .menu__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; }
@@ -639,7 +685,6 @@ iframe[src*="netlify"], a[href*="app.netlify.com/drop"], #netlify-badge-containe
 }
 
 @media (max-width: 460px) {
-  .cats__rail { grid-template-columns: repeat(2, 1fr); }
   .hero__stats { gap: 1.2rem; }
   .hero__stats strong { font-size: 1.2rem; }
   .menu__controls { flex-direction: column; align-items: stretch; }
