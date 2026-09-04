@@ -1,0 +1,16 @@
+{
+  "name": "cyrils-foods",
+  "version": "1.0.0",
+  "description": "Cyril's Foods — high-converting restaurant ordering site with dynamic delivery pricing, Paystack card/transfer payments, auto-verification webhook and instant WhatsApp order alerts.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
