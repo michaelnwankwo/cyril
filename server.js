@@ -1,14 +1,14 @@
 /* =============================================================
-   CYRIL'S FOODS — BACKEND VERIFICATION & AUTOMATION ENGINE (server.js)
+   CYRIL'S FOODS â BACKEND VERIFICATION & AUTOMATION ENGINE (server.js)
    Responsibilities:
-     • Serve the static site
-     • Initialise Paystack transactions (card + dynamic bank transfer)
-     • Receive & HMAC-SHA512 verify Paystack webhooks (charge.success)
-       — zero human verification.
-     • Persist verified orders
-     • Dispatch an instant WhatsApp alert to 08081988184
+     â¢ Serve the static site
+     â¢ Initialise Paystack transactions (card + dynamic bank transfer)
+     â¢ Receive & HMAC-SHA512 verify Paystack webhooks (charge.success)
+       â zero human verification.
+     â¢ Persist verified orders
+     â¢ Dispatch an instant WhatsApp alert to 08081988184
        (Twilio WhatsApp / Green API / wa.me fallback)
-     • Stream verified orders to the admin panel via SSE (+ chime client-side)
+     â¢ Stream verified orders to the admin panel via SSE (+ chime client-side)
    Run:  node server.js   (see .env.example for configuration)
    ============================================================= */
 "use strict";
@@ -42,7 +42,7 @@ const config = {
   port: process.env.PORT || 3000,
   paystackSecretKey: process.env.PAYSTACK_SECRET_KEY || "",
   paystackPublicKey: process.env.PAYSTACK_PUBLIC_KEY || "",
-  // WhatsApp dispatch — choose whichever provider creds are present.
+  // WhatsApp dispatch â choose whichever provider creds are present.
   twilio: {
     sid: process.env.TWILIO_ACCOUNT_SID || "",
     auth: process.env.TWILIO_AUTH_TOKEN || "",
@@ -54,7 +54,7 @@ const config = {
     token: process.env.GREEN_API_TOKEN || "",
     chatId: process.env.GREEN_API_CHAT_ID || "2348081988184@c.us",
   },
-  // Restaurant fixed origin (Point A) — 26 College Rd, Ifako-Ijaiye, Lagos.
+  // Restaurant fixed origin (Point A) â 26 College Rd, Ifako-Ijaiye, Lagos.
   originAddress: process.env.REST_ADDRESS || "26 College Rd, Ifako-Ijaiye, Lagos, Nigeria",
   originLat: parseFloat(process.env.REST_LAT || "6.6427"),
   originLng: parseFloat(process.env.REST_LNG || "3.3288"),
@@ -104,34 +104,93 @@ function extractToken(req) {
   const q = new URL(req.url, "http://x").searchParams.get("token"); // SSE can't set headers via EventSource
   return q || null;
 }
-// Auth middleware — blocks all unauthorized kitchen requests with 401.
+// Auth middleware â blocks all unauthorized kitchen requests with 401.
 function requireKitchen(req, res, next) {
   const payload = verifyToken(extractToken(req));
-  if (!payload) return res.status(401).json({ status: "error", message: "Unauthorized — valid kitchen session required." });
+  if (!payload) return res.status(401).json({ status: "error", message: "Unauthorized â valid kitchen session required." });
   req.kitchen = payload;
   next();
 }
 
-/* Raw body is required for Paystack signature verification — BEFORE json parser. */
+/* Raw body is required for Paystack signature verification â BEFORE json parser. */
 app.use("/api/paystack/webhook", express.raw({ type: "*/*" }));
-/* ---- CORS: let a separately-hosted frontend (e.g. Netlify static) call us ----
-   Set CORS_ORIGIN to your exact site (recommended), or leave * for any origin. */
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
+/* ---- CORS: default to KNOWN production origins (override with CORS_ORIGIN) ----
+   Never ship a wide-open "*" against public order/auth endpoints. Local dev
+   origins are allowed automatically. */
+const KNOWN_ORIGINS = [
+  "https://cyrilfoods.netlify.app",
+  "https://cyrilsfood.com.ng",
+  "https://www.cyrilsfood.com.ng",
+];
+const CORS_WHITELIST = (process.env.CORS_ORIGIN || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean).concat(KNOWN_ORIGINS);
+function isAllowedOrigin(origin) {
+  if (!origin) return true;                                   // same-origin / curl / server-to-server
+  if (CORS_WHITELIST.indexOf(origin) !== -1) return true;
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true; // local dev
+  return false;
+}
 app.use(function (req, res, next) {
   const origin = req.headers.origin;
-  if (CORS_ORIGIN === "*") res.setHeader("Access-Control-Allow-Origin", "*");
-  else if (origin && (CORS_ORIGIN.split(",").map(function (s) { return s.trim(); }).indexOf(origin) !== -1))
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  if (origin && isAllowedOrigin(origin)) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.sendStatus(204);
+  if (req.method === "OPTIONS") return res.sendStatus(isAllowedOrigin(origin) ? 204 : 403);
+  next();
+});
+
+/* ---- Simple in-memory IP rate limiter (no external deps) ----
+   Usage: rateLimit(maxHits, windowMs) â middleware. */
+function clientIp(req) {
+  const xff = (req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return xff || req.ip || req.socket && req.socket.remoteAddress || "unknown";
+}
+function rateLimit(maxHits, windowMs) {
+  const hits = new Map();
+  // periodic cleanup
+  setInterval(function () {
+    const now = Date.now();
+    hits.forEach(function (v, k) { if (v.reset < now) hits.delete(k); });
+  }, windowMs).unref && setInterval(function () {}, 1000).unref();
+  return function (req, res, next) {
+    const key = clientIp(req) + "|" + req.path;
+    const now = Date.now();
+    let rec = hits.get(key);
+    if (!rec || rec.reset < now) { rec = { count: 0, reset: now + windowMs }; hits.set(key, rec); }
+    rec.count++;
+    if (rec.count > maxHits) {
+      res.setHeader("Retry-After", Math.ceil((rec.reset - now) / 1000));
+      return res.status(429).json({ status: "error", message: "Too many requests. Please try again shortly." });
+    }
+    next();
+  };
+}
+
+/* ---- Input sanitization: strip control chars & angle brackets from user text ----
+   Defense in depth â the client also renders via textContent/esc(). */
+function cleanStr(v, max) {
+  if (v == null) return "";
+  return String(v)
+    .replace(/[<>"'`]/g, "")
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, max || 200);
+}
+
+/* ---- Baseline security response headers ---- */
+app.use(function (req, res, next) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Permissions-Policy", "geolocation=(self), microphone=(), camera=()");
   next();
 });
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname, { dotfiles: "deny" })); // never serve .env, .git, etc.
-// Belt-and-suspenders: hard 404 for any dotfile request (.env, .git/*, …) so the
+// Belt-and-suspenders: hard 404 for any dotfile request (.env, .git/*, â¦) so the
 // SPA fallback can never mask them with a 200.
 app.use(function (req, res, next) {
   if (/\/\.[^/]*/.test(new URL(req.url, "http://x").pathname)) return res.status(404).send("Not found");
@@ -144,13 +203,13 @@ let kitchenStatus = { manualClosed: false, outOfStock: [] };
 try { if (fs.existsSync(kitchenStatusFile)) kitchenStatus = JSON.parse(fs.readFileSync(kitchenStatusFile, "utf8")); } catch (e) {}
 function saveKitchenStatus() { try { fs.writeFileSync(kitchenStatusFile, JSON.stringify(kitchenStatus, null, 2)); } catch (e) {} }
 
-/* PUBLIC status snapshot (no order data) — storefront uses this for overrides. */
+/* PUBLIC status snapshot (no order data) â storefront uses this for overrides. */
 app.get("/api/status", function (req, res) {
   res.json({ manualClosed: !!kitchenStatus.manualClosed, outOfStock: kitchenStatus.outOfStock || [], time: new Date().toISOString() });
 });
 
 /* ---- Kitchen auth ---- */
-app.post("/api/kitchen/login", function (req, res) {
+function handlePinLogin(req, res) {
   const pin = String((req.body && req.body.pin) || "").trim();
   const expected = String(KITCHEN_PIN);
   let ok = false;
@@ -160,7 +219,8 @@ app.post("/api/kitchen/login", function (req, res) {
   if (!ok) return res.status(401).json({ status: "error", message: "Incorrect kitchen passcode." });
   const token = signToken({ role: "kitchen", exp: Date.now() + SESSION_TTL_MS });
   res.json({ status: "ok", token: token, expiresIn: SESSION_TTL_SEC });
-});
+}
+app.post("/api/kitchen/login", rateLimit(10, 15 * 60 * 1000), handlePinLogin);
 
 /* ---- Passwordless magic-link auth ---- */
 function publicBaseUrl(req) {
@@ -170,10 +230,10 @@ function publicBaseUrl(req) {
 // Best-effort email delivery. Configure one provider; otherwise the link is
 // printed to the server console (fine for local/dev / VPS logs).
 function sendStaffEmail(to, link) {
-  const subject = "Cyril's Foods kitchen — sign-in link";
+  const subject = "Cyril's Foods kitchen â sign-in link";
   const text = "Your Cyril's Foods kitchen sign-in link (valid 10 minutes, single use):\n\n" + link +
     "\n\nIf you didn't request this, ignore this email.";
-  // 1) Generic email webhook (e.g. Resend, Brevo, Mailgun, Zapier) — POST JSON.
+  // 1) Generic email webhook (e.g. Resend, Brevo, Mailgun, Zapier) â POST JSON.
   const hook = process.env.EMAIL_WEBHOOK_URL;
   if (hook) {
     return new Promise(function (resolve) {
@@ -189,7 +249,7 @@ function sendStaffEmail(to, link) {
     });
   }
   // 2) Fallback: surface the link in the server log.
-  console.log("\n🔐 KITCHEN MAGIC LINK → " + to + "\n   " + link + "\n");
+  console.log("\nð KITCHEN MAGIC LINK â " + to + "\n   " + link + "\n");
   return Promise.resolve(true);
 }
 
@@ -208,8 +268,10 @@ function handleMagicRequest(req, res) {
   }
   res.json({ status: "ok", message: "If that email is authorized, a sign-in link is on its way." });
 }
-app.post("/api/kitchen/magic-request", handleMagicRequest);
-app.post("/api/auth/magic-link", handleMagicRequest); // canonical alias
+// Limit magic-link requests: 3 per IP per 15 minutes (anti-spam / brute force).
+const magicLimiter = rateLimit(3, 15 * 60 * 1000);
+app.post("/api/kitchen/magic-request", magicLimiter, handleMagicRequest);
+app.post("/api/auth/magic-link", magicLimiter, handleMagicRequest); // canonical alias
 
 // Magic-link landing: verify the single-use code, mint a 24h session, redirect.
 app.get("/api/kitchen/magic-verify", function (req, res) {
@@ -267,7 +329,7 @@ function saveOrders() {
   try { fs.writeFileSync(config.ordersFile, JSON.stringify(orders, null, 2)); } catch (e) {}
 }
 
-/* SSE client pool — only authenticated kitchen portal streams subscribe. */
+/* SSE client pool â only authenticated kitchen portal streams subscribe. */
 const sseClients = new Set();
 function broadcast(order) {
   const payload = JSON.stringify(order);
@@ -275,7 +337,7 @@ function broadcast(order) {
 }
 
 /* ---------------- Helpers ---------------- */
-const money = (n) => "₦" + Number(n).toLocaleString("en-NG");
+const money = (n) => "â¦" + Number(n).toLocaleString("en-NG");
 
 function httpsJson(options, body) {
   return new Promise(function (resolve, reject) {
@@ -338,45 +400,83 @@ async function dispatchWhatsApp(message) {
   if (!results.some((x) => x.ok)) {
     const link = "https://wa.me/2348081988184?text=" + encodeURIComponent(message);
     results.push({ provider: "wame-link", ok: true, link: link });
-    console.log("\n📲 [WhatsApp alert — open this link to deliver]:\n" + link + "\n");
+    console.log("\nð² [WhatsApp alert â open this link to deliver]:\n" + link + "\n");
   }
   return results;
 }
 
 function formatOrderMessage(o) {
   const lines = [];
-  lines.push("🛎️ *NEW PAID ORDER — Cyril's Foods*");
+  lines.push("ðï¸ *NEW PAID ORDER â Cyril's Foods*");
   lines.push("Ref: " + o.reference);
   lines.push("Customer: " + (o.customer && o.customer.name));
   lines.push("Phone: " + (o.customer && o.customer.phone));
   lines.push("");
   lines.push("*Items:*");
   (o.items || []).forEach(function (i) {
-    lines.push("• " + i.qty + "x " + i.name +
+    lines.push("â¢ " + i.qty + "x " + i.name +
       (i.options && i.options.length ? " (" + i.options.join(", ") + ")" : "") +
-      " — " + money(i.lineTotal));
+      " â " + money(i.lineTotal));
   });
   lines.push("");
   if (o.address && o.address.description) {
-    lines.push("📍 Delivery: " + o.address.description);
+    lines.push("ð Delivery: " + o.address.description);
     if (o.address.distanceKm) {
       lines.push("Distance: " + o.address.distanceKm + " km" + (o.address.minutes ? " (~" + o.address.minutes + " min)" : ""));
     }
     if (o.address.fee) lines.push("Delivery fee: " + money(o.address.fee));
   }
   if (o.deliveryFee) lines.push("Delivery fee: " + money(o.deliveryFee));
-  if (o.note) lines.push("📝 Note: " + o.note);
+  if (o.note) lines.push("ð Note: " + o.note);
   lines.push("Method: " + o.method);
   lines.push("");
   lines.push("*TOTAL: " + money(o.total) + "*");
-  lines.push("Status: PAID ✅ (auto-verified)");
+  lines.push("Status: PAID â (auto-verified)");
   return lines.join("\n");
 }
 
 /* ---------------- Paystack: initialise transaction ---------------- */
-app.post("/api/order/init", async function (req, res) {
-  const order = req.body || {};
-  if (!order.reference) order.reference = "CFD" + Date.now() + Math.floor(Math.random() * 1000);
+app.post("/api/order/init", rateLimit(20, 10 * 60 * 1000), async function (req, res) {
+  const raw = req.body || {};
+  // Sanitize all free-text user fields server-side (defense in depth; the client
+  // also renders with textContent). Numeric fields are coerced, never trusted.
+  const order = {
+    reference: cleanStr(raw.reference, 60) || ("CFD" + Date.now() + Math.floor(Math.random() * 1000)),
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    note: cleanStr(raw.note, 300),
+    method: ["card", "bank_transfer"].indexOf(raw.method) !== -1 ? raw.method : "card",
+    customer: {
+      name: cleanStr(raw.customer && raw.customer.name, 80),
+      phone: cleanStr(raw.customer && raw.customer.phone, 30),
+      email: cleanStr(raw.customer && raw.customer.email, 120),
+    },
+    address: raw.address && raw.address.description ? {
+      description: cleanStr(raw.address.description, 200),
+      lat: Number(raw.address.lat) || config.originLat,
+      lng: Number(raw.address.lng) || config.originLng,
+      distanceKm: Math.min(120, Math.max(0, Number(raw.address.distanceKm) || 0)),
+      minutes: Number(raw.address.minutes) || 0,
+      fee: Math.max(0, Math.round(Number(raw.address.fee) || 0)),
+    } : null,
+    items: Array.isArray(raw.items) ? raw.items.slice(0, 40).map(function (i) {
+      return {
+        name: cleanStr(i.name, 120),
+        qty: Math.min(50, Math.max(1, parseInt(i.qty, 10) || 1)),
+        unitPrice: Math.max(0, Math.round(Number(i.unitPrice) || 0)),
+        options: Array.isArray(i.options) ? i.options.slice(0, 12).map(function (o) { return cleanStr(o, 60); }) : [],
+      };
+    }) : [],
+  };
+  // Recompute totals server-side from sanitized line items + fee (never trust client total).
+  order.subtotal = order.items.reduce(function (s, i) { return s + i.unitPrice * i.qty; }, 0);
+  order.deliveryFee = order.address ? order.address.fee : 0;
+  order.total = order.subtotal + order.deliveryFee;
+  if (!order.customer.name || !/^[0-9+()\s-]{7,20}$/.test(order.customer.phone)) {
+    return res.status(400).json({ status: "error", message: "Valid name and phone number are required." });
+  }
+  if (order.total <= 0) return res.status(400).json({ status: "error", message: "Your cart is empty." });
+  if (!order.customer.email) order.customer.email = "guest@order.cyrilsfood.com.ng";
 
   // Persist a pending order snapshot.
   order.status = "pending";
@@ -387,7 +487,7 @@ app.post("/api/order/init", async function (req, res) {
   if (!config.paystackSecretKey) {
     // No key configured (local/demo): return ref; webhook flow documented in README.
     return res.json({ status: "ok", reference: order.reference, mode: "demo",
-                      message: "Paystack secret not set — running in demo mode." });
+                      message: "Paystack secret not set â running in demo mode." });
   }
 
   try {
@@ -442,7 +542,7 @@ app.get("/api/order/verify", async function (req, res) {
   }
 });
 
-/* ---------------- Paystack WEBHOOK — HMAC-SHA512 verification ---------------- */
+/* ---------------- Paystack WEBHOOK â HMAC-SHA512 verification ---------------- */
 app.post("/api/paystack/webhook", async function (req, res) {
   const signature = req.headers["x-paystack-signature"];
   const raw = req.body; // Buffer (raw body parser)
@@ -459,13 +559,13 @@ app.post("/api/paystack/webhook", async function (req, res) {
   res.sendStatus(200);
 
   if (!valid) {
-    console.warn("⚠️  Webhook received with INVALID signature — ignored.");
+    console.warn("â ï¸  Webhook received with INVALID signature â ignored.");
     return;
   }
 
   let event;
   try { event = JSON.parse(raw.toString("utf8")); } catch (e) { return; }
-  console.log("🔔 Webhook event:", event.event);
+  console.log("ð Webhook event:", event.event);
 
   if (event.event !== "charge.success") return;
 
@@ -491,7 +591,7 @@ app.post("/api/paystack/webhook", async function (req, res) {
   }
 
   // Guard against double-processing the same reference.
-  if (order.status === "paid") { console.log("↩️  Duplicate webhook for", reference, "— ignored."); return; }
+  if (order.status === "paid") { console.log("â©ï¸  Duplicate webhook for", reference, "â ignored."); return; }
 
   order.status = "paid";
   order.paidAt = new Date().toISOString();
@@ -509,7 +609,7 @@ app.post("/api/paystack/webhook", async function (req, res) {
   // 3) Dispatch instant WhatsApp alert.
   const message = formatOrderMessage(order);
   const dispatch = await dispatchWhatsApp(message);
-  console.log("✅ Order " + reference + " verified & paid — total " + money(order.total));
+  console.log("â Order " + reference + " verified & paid â total " + money(order.total));
   console.log("   WhatsApp dispatch:", JSON.stringify(dispatch));
 });
 
@@ -541,8 +641,8 @@ app.use(function (req, res) {
 });
 
 app.listen(config.port, "0.0.0.0", function () {
-  console.log("🍲 Cyril's Foods server running → http://localhost:" + config.port);
-  console.log("   Paystack:", config.paystackSecretKey ? "configured ✓" : "DEMO mode (set PAYSTACK_SECRET_KEY)");
+  console.log("ð² Cyril's Foods server running â http://localhost:" + config.port);
+  console.log("   Paystack:", config.paystackSecretKey ? "configured â" : "DEMO mode (set PAYSTACK_SECRET_KEY)");
   console.log("   WhatsApp: Twilio=" + (!!(config.twilio.sid && config.twilio.auth)) +
               " GreenAPI=" + (!!(config.greenApi.instance && config.greenApi.token)) +
               " (wa.me fallback always on)");
