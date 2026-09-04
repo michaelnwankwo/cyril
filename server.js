@@ -532,8 +532,13 @@ app.get("/api/health", function (req, res) {
 app.get("/kitchen-portal", function (req, res) { res.sendFile(path.join(__dirname, "kitchen.html")); });
 app.get("/cyril-kitchen-9082", function (req, res) { res.sendFile(path.join(__dirname, "kitchen.html")); });
 
-/* SPA fallback for any non-API route. */
-app.get("*", function (req, res) { res.sendFile(path.join(__dirname, "index.html")); });
+/* Fallback: branded 404 for unknown routes; JSON 404 for unknown API calls. */
+app.use(function (req, res) {
+  if (req.path.indexOf("/api/") === 0) return res.status(404).json({ status: "error", message: "Not found" });
+  res.status(404).sendFile(path.join(__dirname, "404.html"), function (err) {
+    if (err) res.status(404).send("Not found");
+  });
+});
 
 app.listen(config.port, "0.0.0.0", function () {
   console.log("🍲 Cyril's Foods server running → http://localhost:" + config.port);

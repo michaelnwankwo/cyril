@@ -743,7 +743,7 @@
       '<div class="modal" id="itemModal" aria-hidden="true"><div class="modal__backdrop" data-close-modal></div>' +
         '<div class="modal__box modal__box--item" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">' +
         '<button class="modal__close" data-close-modal aria-label="Close">&times;</button>' +
-        '<div class="item-modal"><div class="item-modal__img"><img id="imImg" src="" alt="" /></div>' +
+        '<div class="item-modal"><div class="item-modal__img"><img id="imImg" src="" alt="Selected dish" /></div>' +
         '<div class="item-modal__body"><span class="item-modal__cat" id="imCat"></span>' +
         '<h3 id="itemModalTitle"></h3><p class="item-modal__desc" id="imDesc"></p>' +
         '<div id="imModifiers"></div>' +

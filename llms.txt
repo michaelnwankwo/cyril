@@ -1,0 +1,28 @@
+# Cyril's Foods
+
+> Authentic Nigerian restaurant in Lagos — smokey party jollof, silky swallow, rich soups, peppered protein, pastries and fresh-pressed drinks, made fresh daily and delivered hot across Lagos.
+
+Cyril's Foods serves party-style Nigerian food for everyday meals, family gatherings and large celebrations. Ordering is online with secure Paystack payment (card or bank transfer) and honest, distance-based delivery pricing — a flat ₦1,100 per kilometre measured by live route mapping from the kitchen to the customer's address.
+
+## Key facts
+- Kitchen origin: 26 College Rd, Ifako-Ijaiye, Lagos, Nigeria (6.6427, 3.3288)
+- Open: 9:00 AM – 7:00 PM (WAT), daily
+- Delivery rate: ₦1,100 / km (door-to-door, shown before payment)
+- Phone / WhatsApp: 0808 198 8184 (+2348081988184)
+- Bulk & events: 0805 354 0206
+- Email: cyrilsfood@gmail.com
+- Payment: Paystack (card & dynamic bank transfer), auto-verified
+
+## Pages
+- [Home](https://cyrilfoods.netlify.app/): Featured dishes, delivery estimator, about, contact
+- [Full Menu](https://cyrilfoods.netlify.app/menu.html): Complete 140+ item menu across jollof & rice, swallow, soups, protein, sides, pastries, drinks and ice cream
+
+## Cuisine highlights
+- Smokey party jollof rice, fried rice, ofada
+- Swallow (pounded yam, eba, semo, amala) with egusi, efo riro, okra and afang soups
+- Grilled & peppered protein (assorted meat, chicken, fish)
+- Small chops, pastries and party trays
+- Fresh-pressed drinks (zobo, kunu, juices) and ice cream
+
+## Staff
+- The kitchen order dashboard is a private, passwordless (magic-link) staff portal and is not linked publicly.

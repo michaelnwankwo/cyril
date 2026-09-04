@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+# Staff-only kitchen portal — keep out of search indexes.
+Disallow: /kitchen.html
+Disallow: /kitchen-portal
+Disallow: /cyril-kitchen-9082
+Disallow: /api/
+Disallow: /orders.json
+Disallow: /kitchen-status.json
+
+Sitemap: https://cyrilfoods.netlify.app/sitemap.xml

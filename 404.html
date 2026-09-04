@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page not found — Cyril's Foods</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#2f7d32" />
+  <link rel="icon" href="assets/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .nf { min-height: 100dvh; display: grid; place-items: center; padding: 2rem 1.2rem; text-align: center;
+      background: radial-gradient(700px 400px at 50% -10%, rgba(80,160,80,.16), transparent), var(--bg); }
+    .nf__card { max-width: 460px; }
+    .nf__logo { height: 84px; width: auto; margin: 0 auto 1.2rem; }
+    .nf__code { font-family: var(--font-display); font-size: clamp(4rem, 18vw, 7rem); line-height: 1; color: var(--green-800); }
+    .nf h1 { font-family: var(--font-display); font-size: 1.6rem; color: var(--green-900); margin: .4rem 0 .6rem; }
+    .nf p { color: var(--ink-500); margin-bottom: 1.4rem; }
+    .nf__acts { display: flex; gap: .7rem; justify-content: center; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <main class="nf">
+    <div class="nf__card">
+      <img class="nf__logo" src="assets/logo.png" alt="Cyril's Foods logo" />
+      <div class="nf__code">404</div>
+      <h1>This plate is empty</h1>
+      <p>We couldn't find the page you were looking for — it may have moved or the link is off the menu.</p>
+      <div class="nf__acts">
+        <a class="btn btn--primary" href="menu.html">Browse the full menu</a>
+        <a class="btn btn--ghost" href="index.html">Back to home</a>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
