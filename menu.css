@@ -1,0 +1,39 @@
+/* =============================================================
+   CYRIL'S FOODS — MENU PAGE STYLES (menu.html)
+   Page-specific layout layered on top of styles.css.
+   ============================================================= */
+
+.menu-hero { position: relative; overflow: hidden; }
+.menu-hero .container { position: relative; padding-top: 3.2rem; }
+
+/* Category quick-jump bar (sticky-ish controls) */
+.menu__controls--page {
+  position: sticky; top: calc(var(--nav-h) + 6px); z-index: 50;
+  background: rgba(255, 255, 255, .92); backdrop-filter: blur(12px);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: .8rem 1rem; margin-bottom: 2rem; box-shadow: var(--shadow-sm);
+  gap: 1rem;
+}
+
+.menu-page__cta { text-align: center; margin-top: 3rem; padding: 2.2rem 1.5rem;
+  background: linear-gradient(160deg, var(--green-050), #fff); border: 1px solid var(--line);
+  border-radius: var(--radius); }
+.menu-page__cta p { color: var(--ink-700); font-size: 1.05rem; margin-bottom: 1.2rem; }
+.menu-page__btns { display: flex; gap: .9rem; justify-content: center; flex-wrap: wrap; }
+
+/* Result count helper (optional) */
+.menu-result-count { text-align: center; color: var(--ink-500); font-size: .9rem; margin: -0.4rem 0 1.4rem; }
+
+/* ---------- Responsive: clean multi-column card grid on mobile ---------- */
+@media (max-width: 900px) {
+  .menu__controls--page { position: static; }
+}
+@media (max-width: 720px) {
+  .menu-hero .container { padding-top: 2.2rem; }
+  .menu-hero__title { font-size: clamp(1.9rem, 7vw, 2.6rem); }
+  .menu__controls--page { padding: .7rem .8rem; border-radius: var(--radius-sm); }
+  .menu__controls--page .menu__search { min-width: 0; order: -1; width: 100%; }
+}
+@media (max-width: 480px) {
+  .menu-page__btns .btn { width: 100%; justify-content: center; }
+}
