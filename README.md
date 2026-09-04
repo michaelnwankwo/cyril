@@ -55,13 +55,25 @@ Point the Paystack dashboard webhook to `https://your-domain.com/api/paystack/we
 
 ## 🧠 Key behaviour
 
-- **Hours:** 9:00 AM – 7:00 PM WAT. After 7 PM every item shows *Out of Stock*, the
-  banner shows the closed message, and add-to-cart/checkout are locked (re-checks every minute).
-  QA override: `?hours=closed` | `?hours=open`.
-- **Cross-page cart & fee:** cart contents and the resolved delivery address
-  (`km × ₦1,100`) persist in `localStorage` across `index.html` ↔ `menu.html`.
-- **Distance engine:** Google Places + Distance Matrix (if key set) → free OSRM/Photon
-  fallback → haversine estimate. Fee is always derived from a real route, never hardcoded.
+- **Restaurant origin (Point A):** fixed at **26 College Rd, Ifako-Ijaiye, Lagos, Nigeria**
+  (`lat 6.6427, lng 3.3288`) — overridable via `REST_LAT`/`REST_LNG` env. Shown in the
+  footer (with a Google Maps link) and in the delivery-fee explanation modal.
+- **Hours:** 9:00 AM – 7:00 PM WAT. The announcement bar is **hidden during open hours**
+  (decluttered); it only appears when closed with *"Yes, we are closed! But we'd be back by
+  opening time (9:00 AM)."* Every item then shows *Out of Stock* and add-to-cart/checkout
+  lock (re-checks every minute). QA override: `?hours=closed` | `?hours=open`.
+- **Address & fee persistence:** once a delivery address is verified, it — plus the
+  distance and fee (`km × ₦1,100`) — is stored in `localStorage` and restored on every
+  page. It survives `index.html` ↔ `menu.html` navigation and cart changes, and is shown
+  in a saved-address chip at checkout (with an **Edit** button). It only resets on a hard
+  reload of an empty session or when the customer explicitly edits it.
+- **Delivery transparency:** a subtle *"Want to know how your delivery is calculated?"*
+  link opens a clean modal explaining the ₦1,100/km rule from the kitchen to the drop-off.
+- **Address search:** Google Places Autocomplete with `componentRestrictions: { country: "ng" }`
+  and Lagos-metropolis bounds (Geocoding fallback for obscure typed streets), then free
+  Photon (Lagos bbox) → Nominatim fallbacks so local streets/landmarks surface reliably.
+- **Distance engine:** Google Distance Matrix (if key set) → free OSRM route → haversine
+  estimate. Fee is always derived from a real route, never hardcoded.
 - **Modifiers:** protein/extras (e.g. Grilled Chicken **+₦1,000**) update price live.
 - **Payments:** Paystack Inline, `card` + `bank_transfer` (dynamic virtual accounts).
   The `charge.success` webhook is HMAC-SHA512 verified (forged events rejected, dupes

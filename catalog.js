@@ -20,9 +20,16 @@
     whatsappDisplay: "0808 198 8184",
     bulk: "0805 354 0206",
     socialHandle: "@Cyrilsfoods",
-    // Fixed restaurant origin (Lagos). Override with REST_LAT / REST_LNG env on server.
-    originLat: 6.5244,
-    originLng: 3.3792,
+    // Fixed restaurant origin (Point A) — 26 College Rd, Ifako-Ijaiye, Lagos.
+    originAddress: "26 College Rd, Ifako-Ijaiye, Lagos, Nigeria",
+    originLat: 6.6427,
+    originLng: 3.3288,
+    // Lagos metropolis bias for address search (south-west, north-east bounds).
+    lagosBounds: {
+      southwest: { lat: 6.35, lng: 3.05 },
+      northeast: { lat: 6.80, lng: 3.75 },
+      center: { lat: 6.60, lng: 3.38 },
+    },
     // Delivery economics
     ratePerKm: 1100,                     // ₦1,100 per driving km
     baseFee: 0,

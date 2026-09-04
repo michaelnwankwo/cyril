@@ -36,9 +36,10 @@ const config = {
     token: process.env.GREEN_API_TOKEN || "",
     chatId: process.env.GREEN_API_CHAT_ID || "2348081988184@c.us",
   },
-  // Restaurant fixed origin (distance engine)
-  originLat: parseFloat(process.env.REST_LAT || "6.5244"),
-  originLng: parseFloat(process.env.REST_LNG || "3.3792"),
+  // Restaurant fixed origin (Point A) — 26 College Rd, Ifako-Ijaiye, Lagos.
+  originAddress: process.env.REST_ADDRESS || "26 College Rd, Ifako-Ijaiye, Lagos, Nigeria",
+  originLat: parseFloat(process.env.REST_LAT || "6.6427"),
+  originLng: parseFloat(process.env.REST_LNG || "3.3288"),
   ratePerKm: parseInt(process.env.RATE_PER_KM || "1100", 10),
   ordersFile: path.join(__dirname, "orders.json"),
 };
@@ -149,11 +150,14 @@ function formatOrderMessage(o) {
       " — " + money(i.lineTotal));
   });
   lines.push("");
-  if (o.address) {
+  if (o.address && o.address.description) {
     lines.push("📍 Delivery: " + o.address.description);
-    lines.push("Distance: " + o.address.distanceKm + " km (~" + o.address.minutes + " min)");
-    lines.push("Delivery fee: " + money(o.address.fee));
+    if (o.address.distanceKm) {
+      lines.push("Distance: " + o.address.distanceKm + " km" + (o.address.minutes ? " (~" + o.address.minutes + " min)" : ""));
+    }
+    if (o.address.fee) lines.push("Delivery fee: " + money(o.address.fee));
   }
+  if (o.deliveryFee) lines.push("Delivery fee: " + money(o.deliveryFee));
   if (o.note) lines.push("📝 Note: " + o.note);
   lines.push("Method: " + o.method);
   lines.push("");
@@ -333,7 +337,7 @@ app.get("/api/health", function (req, res) {
       twilio: !!(config.twilio.sid && config.twilio.auth),
       greenApi: !!(config.greenApi.instance && config.greenApi.token),
     },
-    origin: { lat: config.originLat, lng: config.originLng },
+    origin: { lat: config.originLat, lng: config.originLng, address: config.originAddress },
     ratePerKm: config.ratePerKm,
     time: new Date().toISOString(),
   });

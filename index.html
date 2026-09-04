@@ -37,10 +37,10 @@
     <div class="loader__bar"></div>
   </div>
 
-  <!-- Live status bar -->
-  <div id="statusBar" class="statusbar statusbar--open">
+  <!-- Closed-hours announcement bar — hidden during open hours, shown only when closed -->
+  <div id="statusBar" class="statusbar statusbar--closed" hidden role="status" aria-live="polite">
     <span class="statusbar__dot"></span>
-    <span id="statusText" class="statusbar__text">We're open and taking orders!</span>
+    <span id="statusText" class="statusbar__text">Yes, we are closed! But we'd be back by opening time (9:00 AM).</span>
     <span id="statusHours" class="statusbar__hours"></span>
   </div>
 
@@ -172,15 +172,17 @@
         <h3>Estimate my delivery</h3>
         <label for="calcAddress">Your delivery address</label>
         <div class="autocomplete">
-          <input type="text" id="calcAddress" placeholder="Start typing your address…" autocomplete="off" aria-label="Delivery address" />
+          <input type="text" id="calcAddress" placeholder="Start typing your address or landmark…" autocomplete="off" aria-label="Delivery address" />
           <ul class="autocomplete__list" id="calcSuggestions" role="listbox"></ul>
         </div>
+        <div class="saved-addr-wrap" id="calcSaved" style="display:none"></div>
         <div class="delivery__result" id="calcResult">
-          <div class="delivery__row"><span>Kitchen → You</span><strong id="calcDistance">— km</strong></div>
+          <div class="delivery__row"><span>Cyril's Kitchen → You</span><strong id="calcDistance">— km</strong></div>
           <div class="delivery__row delivery__row--fee"><span>Delivery fee</span><strong id="calcFee">₦0</strong></div>
           <p class="delivery__note" id="calcNote">Enter an address to get your exact fee.</p>
         </div>
-        <a href="menu.html" class="btn btn--primary" style="width:100%;justify-content:center;margin-top:.5rem">Build my order</a>
+        <a href="#" class="delivery__info-link" id="deliveryInfoLink">Want to know how your delivery is calculated?</a>
+        <a href="menu.html" class="btn btn--primary" style="width:100%;justify-content:center;margin-top:.8rem">Build my order</a>
       </div>
     </div>
   </section>
@@ -216,6 +218,9 @@
         <img src="assets/logo.png" alt="Cyril's Foods logo" />
         <h3>Cyril's <em>Foods</em></h3>
         <p>Best Food In Town. Party jollof, swallow, soups, protein, pastries &amp; fresh drinks — delivered hot across Lagos.</p>
+        <a class="footer__address" href="https://www.google.com/maps/search/?api=1&query=26+College+Rd,+Ifako-Ijaiye,+Lagos,+Nigeria" target="_blank" rel="noopener">
+          <span>📍</span> 26 College Rd, Ifako-Ijaiye, Lagos, Nigeria
+        </a>
         <div class="footer__social">
           <a href="https://facebook.com/Cyrilsfoods" target="_blank" rel="noopener" aria-label="Facebook">f</a>
           <a href="https://instagram.com/Cyrilsfoods" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 3.68A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm6.4-10.4a1.44 1.44 0 11-1.44-1.44 1.44 1.44 0 011.44 1.44z"/></svg></a>

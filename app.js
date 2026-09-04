@@ -25,6 +25,8 @@
     ratePerKm: BRAND.ratePerKm,
     originLat: BRAND.originLat,
     originLng: BRAND.originLng,
+    originAddress: BRAND.originAddress || "",
+    lagosBounds: BRAND.lagosBounds || { southwest: { lat: 6.35, lng: 3.05 }, northeast: { lat: 6.80, lng: 3.75 }, center: { lat: 6.60, lng: 3.38 } },
   };
 
   var state = {
@@ -80,13 +82,18 @@
   function applyHours() {
     state.open = isOpenNow();
     var bar = $("#statusBar"), txt = $("#statusText"), hrs = $("#statusHours");
-    if (hrs) hrs.textContent = "· Open daily " + BRAND.openHour + ":00 AM – " + (BRAND.closeHour - 12) + ":00 PM WAT";
     if (state.open) {
-      if (bar) { bar.classList.remove("statusbar--closed"); bar.classList.add("statusbar--open"); }
-      if (txt) txt.textContent = "Yes, we're open! Fresh food cooking now 🍳";
+      // Declutter: hide the announcement bar entirely during open hours.
+      if (bar) bar.hidden = true;
     } else {
-      if (bar) { bar.classList.remove("statusbar--open"); bar.classList.add("statusbar--closed"); }
+      // Only show the closed-hours banner after 7 PM / before 9 AM.
+      if (bar) {
+        bar.hidden = false;
+        bar.classList.remove("statusbar--open");
+        bar.classList.add("statusbar--closed");
+      }
       if (txt) txt.textContent = "Yes, we are closed! But we'd be back by opening time (9:00 AM).";
+      if (hrs) hrs.textContent = "";
       $$(".dish__add, #checkoutBtn, #addCartBtn").forEach(function (b) { b.disabled = true; });
     }
     if (typeof state.gridRenderer === "function") state.gridRenderer();
@@ -111,27 +118,71 @@
     },
     suggest: function (query) {
       var q = query.trim();
-      if (q.length < 3) return Promise.resolve([]);
+      if (q.length < 2) return Promise.resolve([]);
+      var self = this;
       return this.ensureGoogle().then(function () { return []; }).catch(function () {
-        var url = "https://photon.komoot.io/api/?limit=6&lang=en&q=" + encodeURIComponent(q + ", Lagos, Nigeria");
-        return fetch(url).then(function (r) { return r.json(); }).then(function (data) {
-          return (data.features || []).map(function (f) {
+        // Bias search to the entire Lagos metropolis (bbox + proximity to origin).
+        var b = CONFIG.lagosBounds;
+        var photonUrl = "https://photon.komoot.io/api/?limit=8&lang=en" +
+          "&q=" + encodeURIComponent(q) +
+          "&lat=" + CONFIG.originLat + "&lon=" + CONFIG.originLng +
+          "&bbox=" + [b.southwest.lng, b.southwest.lat, b.northeast.lng, b.northeast.lat].join(",");
+        return fetch(photonUrl).then(function (r) { return r.json(); }).then(function (data) {
+          var results = (data.features || []).map(function (f) {
             var p = f.properties, c = f.geometry.coordinates;
-            var parts = [p.housenumber, p.street, p.district || p.suburb, p.city || p.county, "Nigeria"].filter(Boolean);
+            var parts = [p.housenumber, p.street, p.district || p.suburb || p.name, p.city || p.county, "Lagos", "Nigeria"].filter(Boolean);
             var label = parts.filter(function (v, i, a) { return a.indexOf(v) === i; }).join(", ");
-            return { label: label || (p.name || q), lat: c[1], lng: c[0], secondary: (p.name || "") };
+            return { label: label || (p.name || q), lat: c[1], lng: c[0], secondary: p.name && parts.indexOf(p.name) === -1 ? p.name : "" };
+          }).filter(function (x) { return x.label; });
+          if (results.length) return results;
+          return self.nominatim(q);
+        }).catch(function () { return self.nominatim(q); });
+      });
+    },
+    // Secondary free geocoder (OpenStreetMap Nominatim) for obscure streets/landmarks.
+    nominatim: function (q) {
+      var b = CONFIG.lagosBounds;
+      var viewbox = b.southwest.lng + "," + b.northeast.lat + "," + b.northeast.lng + "," + b.southwest.lat;
+      var url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&countrycodes=ng" +
+        "&viewbox=" + viewbox + "&bounded=0&addressdetails=1&q=" + encodeURIComponent(q + ", Lagos, Nigeria");
+      return fetch(url, { headers: { "Accept-Language": "en" } })
+        .then(function (r) { return r.json(); })
+        .then(function (arr) {
+          return (arr || []).map(function (x) {
+            return { label: x.display_name, lat: parseFloat(x.lat), lng: parseFloat(x.lon), secondary: x.type || "" };
           }).filter(function (x) { return x.label; });
         }).catch(function () { return []; });
-      });
     },
     attachGoogleAutocomplete: function (inputEl, onPlace) {
       this.ensureGoogle().then(function () {
+        // Expand search bounds to the entire Lagos metropolis, no artificial limits.
+        var b = CONFIG.lagosBounds;
+        var lagosBounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(b.southwest.lat, b.southwest.lng),
+          new google.maps.LatLng(b.northeast.lat, b.northeast.lng));
         var ac = new google.maps.places.Autocomplete(inputEl, {
-          componentRestrictions: { country: "ng" }, fields: ["formatted_address", "geometry", "name"],
+          componentRestrictions: { country: "ng" },
+          bounds: lagosBounds,
+          strictBounds: false, // allow (but bias to) the whole Lagos area
+          fields: ["formatted_address", "geometry", "name"],
+        });
+        // Also enable Geocoding fallback for free-typed obscure addresses.
+        var geocoder = new google.maps.Geocoder();
+        inputEl.addEventListener("blur", function () {
+          if (inputEl.dataset.placeSet === "1") return;
+          var v = inputEl.value.trim();
+          if (v.length < 3) return;
+          geocoder.geocode({ address: v + ", Lagos, Nigeria", region: "ng", bounds: lagosBounds }, function (res, status) {
+            if (status === "OK" && res && res[0] && res[0].geometry) {
+              var loc = res[0].geometry.location;
+              onPlace({ label: res[0].formatted_address, lat: loc.lat(), lng: loc.lng(), source: "geocoder" });
+            }
+          });
         });
         ac.addListener("place_changed", function () {
           var place = ac.getPlace();
           if (place && place.geometry && place.geometry.location) {
+            inputEl.dataset.placeSet = "1";
             var loc = place.geometry.location;
             onPlace({ label: place.formatted_address || inputEl.value, lat: loc.lat(), lng: loc.lng(),
                       secondary: place.name || "", source: "google" });
@@ -185,17 +236,22 @@
       var fee = computeFee(r.km);
       var result = { km: r.km, minutes: r.minutes, fee: fee, address: place.label,
                      lat: place.lat, lng: place.lng, source: r.source };
-      if (target === "checkout") {
-        state.checkoutAddress = result;
-        try { localStorage.setItem("cyrils_addr", JSON.stringify(result)); } catch (e) {}
-        updateCheckoutTotals();
-      } else {
+      // The verified address + fee is the SAME whether entered on the homepage
+      // calculator or at checkout — persist once and reuse everywhere.
+      state.checkoutAddress = result;
+      try { localStorage.setItem("cyrils_addr", JSON.stringify(result)); } catch (e) {}
+      updateCheckoutTotals();
+
+      if (target === "estimate") {
         var distEl = $("#calcDistance"), feeEl = $("#calcFee");
         if (distEl) distEl.textContent = r.km.toFixed(1) + " km" + (r.minutes ? " · ~" + r.minutes + " min" : "");
         if (feeEl) feeEl.textContent = money(fee);
         if (note) note.textContent = "Exact fee " + money(fee) +
           (r.source === "estimate" ? " (straight-line estimate)" : " based on live driving distance.") +
-          " Added automatically at checkout.";
+          " Saved — it carries over to checkout.";
+        showSavedAddressChip("calc", result);
+      } else {
+        showSavedAddressChip("co", result);
       }
       return result;
     }).catch(function () {
@@ -249,6 +305,45 @@
     document.addEventListener("click", function (e) {
       if (listEl && !listEl.contains(e.target) && e.target !== inputEl) listEl.classList.remove("is-open");
     });
+    // Typing a new address invalidates a previously geocoded place.
+    inputEl.addEventListener("input", function () { inputEl.dataset.placeSet = ""; });
+  }
+
+  /* ---- Saved delivery address: display chip + edit/clear ---- */
+  function showSavedAddressChip(kind, result) {
+    var wrapId = kind === "calc" ? "#calcSaved" : "#coSaved";
+    var wrap = $(wrapId);
+    if (!wrap || !result) return;
+    wrap.innerHTML =
+      '<div class="saved-addr">' +
+        '<span class="saved-addr__icon">📍</span>' +
+        '<div class="saved-addr__txt"><strong>' + esc(result.address) + '</strong>' +
+        '<small>' + result.km.toFixed(1) + " km · ~" + result.minutes + " min · delivery " + money(result.fee) + '</small></div>' +
+        '<button type="button" class="saved-addr__edit" data-edit="' + kind + '">Edit</button>' +
+      "</div>";
+    wrap.style.display = "block";
+    wrap.querySelector("[data-edit]").addEventListener("click", function () {
+      wrap.style.display = "none";
+      var inp = $(kind === "calc" ? "#calcAddress" : "#coAddress");
+      if (inp) { inp.value = ""; inp.focus(); }
+      state.checkoutAddress = null;
+      try { localStorage.removeItem("cyrils_addr"); } catch (e) {}
+      updateCheckoutTotals();
+    });
+  }
+
+  function restoreSavedAddress() {
+    var saved = state.checkoutAddress;
+    if (!saved) return;
+    var coInp = $("#coAddress"); if (coInp && !coInp.value) { coInp.value = saved.address; }
+    var calcInp = $("#calcAddress"); if (calcInp && !calcInp.value) { calcInp.value = saved.address; }
+    var dEl = $("#calcDistance"), fEl = $("#calcFee"), nEl = $("#calcNote");
+    if (dEl) dEl.textContent = saved.km.toFixed(1) + " km · ~" + saved.minutes + " min";
+    if (fEl) fEl.textContent = money(saved.fee);
+    if (nEl) nEl.textContent = "Your saved delivery address — fee " + money(saved.fee) + ".";
+    showSavedAddressChip("calc", saved);
+    showSavedAddressChip("co", saved);
+    updateCheckoutTotals();
   }
 
   /* ---------------- Menu cards (shared template) ---------------- */
@@ -414,6 +509,7 @@
         '<a href="' + (PAGE === "menu" ? "menu.html" : "index.html#categories") + '" class="btn btn--primary btn--sm cart-empty__cta">Browse the menu</a></div>';
       var cta = body.querySelector(".cart-empty__cta");
       if (cta) cta.addEventListener("click", function () { closeDrawer(); });
+      updateFabCart();
       return;
     }
     if (foot) foot.hidden = false;
@@ -440,16 +536,34 @@
       });
     });
     var st = $("#cartSubtotal"); if (st) st.textContent = money(cartSubtotal());
+    updateFabCart();
+  }
+
+  /* Floating cart bar (menu page only) */
+  function updateFabCart() {
+    var fab = $("#fabCart");
+    if (!fab) return;
+    var n = cartCount();
+    fab.classList.add("is-shown");
+    fab.classList.toggle("has-items", n > 0);
+    var cEl = $("#fabCartCount"); if (cEl) cEl.textContent = n;
+    var tEl = $("#fabCartTotal"); if (tEl) tEl.textContent = money(cartSubtotal());
+    var mEl = $("#fabCartMeta"); if (mEl) mEl.textContent = n ? n + (n === 1 ? " item in cart" : " items in cart") : "Your cart";
   }
 
   function saveCart() { try { localStorage.setItem("cyrils_cart", JSON.stringify(state.cart)); } catch (e) {} }
   function loadCart() {
     try {
-      var raw = localStorage.getItem("cyrils_cart"); if (!raw) return;
-      state.cart = JSON.parse(raw).map(function (l) {
-        var item = findItem(l.item && l.item.id);
-        return item ? Object.assign({}, l, { item: item }) : null;
-      }).filter(Boolean);
+      var raw = localStorage.getItem("cyrils_cart");
+      if (raw) {
+        state.cart = JSON.parse(raw).map(function (l) {
+          var item = findItem(l.item && l.item.id);
+          return item ? Object.assign({}, l, { item: item }) : null;
+        }).filter(Boolean);
+      }
+    } catch (e) {}
+    // Delivery address is independent of the cart and must restore on every load.
+    try {
       var addr = localStorage.getItem("cyrils_addr");
       if (addr) state.checkoutAddress = JSON.parse(addr);
     } catch (e) {}
@@ -620,6 +734,15 @@
       '<a class="fab-wa" href="https://wa.me/2348081988184?text=Hello%20Cyril%27s%20Foods!%20I%20want%20to%20order." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">' +
         '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.512 5.26l-.999 3.648 3.976-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></a>' +
 
+      // Floating cart bar — menu page only.
+      (PAGE === "menu"
+        ? '<button class="fab-cart" id="fabCart" aria-label="View cart">' +
+            '<span class="fab-cart__icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>' +
+            '<span class="fab-cart__label"><small id="fabCartMeta">Your cart</small><strong id="fabCartTotal">₦0</strong></span>' +
+            '<span class="fab-cart__count" id="fabCartCount">0</span>' +
+          "</button>"
+        : "") +
+
       '<div class="drawer-backdrop" id="drawerBackdrop"></div>' +
       '<aside class="drawer" id="cartDrawer" aria-label="Shopping cart" aria-hidden="true">' +
         '<div class="drawer__head"><h3>Your Order <span class="drawer__count" id="drawerCount">0</span></h3>' +
@@ -653,8 +776,9 @@
           '<div class="field"><label for="coName">Full name *</label><input type="text" id="coName" required placeholder="Your name" /></div>' +
           '<div class="field"><label for="coPhone">Phone / WhatsApp *</label><input type="tel" id="coPhone" required placeholder="080…" /></div></div>' +
           '<div class="field"><label for="coAddress">Delivery address * <span class="field__hint">(pick from the list)</span></label>' +
-            '<div class="autocomplete"><input type="text" id="coAddress" autocomplete="off" placeholder="e.g. Lekki Phase 1, Lagos" />' +
-            '<ul class="autocomplete__list" id="coSuggestions" role="listbox"></ul></div></div>' +
+            '<div class="autocomplete"><input type="text" id="coAddress" autocomplete="off" placeholder="e.g. College Rd, Ifako-Ijaiye, Lagos" />' +
+            '<ul class="autocomplete__list" id="coSuggestions" role="listbox"></ul></div>' +
+            '<div class="saved-addr-wrap" id="coSaved" style="display:none"></div></div>' +
           '<div class="field"><label for="coNote">Order note <span class="field__hint">(optional)</span></label>' +
             '<input type="text" id="coNote" placeholder="e.g. ring the gate bell, extra pepper" /></div>' +
           '<div class="checkout__summary"><div class="drawer__row"><span>Items subtotal</span><strong id="coSubtotal">₦0</strong></div>' +
@@ -672,6 +796,25 @@
         "<h3>Order confirmed!</h3><p id=\"successText\">Payment received. Our kitchen is on it — we'll WhatsApp you updates shortly.</p>" +
         '<div class="success__ref">Ref: <strong id="successRef"></strong></div>' +
         '<button class="btn btn--primary" id="successClose">Back to menu</button></div></div></div>' +
+
+      '<div class="modal" id="deliveryInfoModal" aria-hidden="true"><div class="modal__backdrop" data-close-modal></div>' +
+        '<div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="deliveryInfoTitle">' +
+        '<button class="modal__close" data-close-modal aria-label="Close">&times;</button>' +
+        '<div class="info-modal">' +
+          '<span class="info-modal__icon">🗺️</span>' +
+          '<h3 id="deliveryInfoTitle">How your delivery fee is calculated</h3>' +
+          '<p>Your fee is a flat <strong>₦1,100 per kilometre</strong>, measured straight from our kitchen to your drop-off using live route mapping — no flat-rate guesswork.</p>' +
+          '<div class="info-modal__route"><span class="info-modal__pin pin-a">A</span>' +
+            '<div class="info-modal__line"><span class="info-modal__truck">🛵</span></div>' +
+            '<span class="info-modal__pin pin-b">B</span></div>' +
+          '<div class="info-modal__points">' +
+            '<div><strong>A · Cyril\'s Kitchen</strong><small>' + esc(CONFIG.originAddress || "26 College Rd, Ifako-Ijaiye, Lagos") + '</small></div>' +
+            '<div><strong>B · Your delivery location</strong><small>You enter your address; we map the exact driving distance.</small></div>' +
+          '</div>' +
+          '<div class="info-modal__formula">Distance (km) × ₦1,100 = <strong>your delivery fee</strong></div>' +
+          '<p class="info-modal__eg">e.g. a 7&nbsp;km route → 7 × ₦1,100 = <strong>₦7,700</strong>, added to your order at checkout.</p>' +
+          '<button class="btn btn--primary" data-close-modal style="width:100%;justify-content:center">Got it</button>' +
+        "</div></div></div>" +
 
       '<button class="admin-fab" id="adminFab" title="Admin panel">🔔</button>' +
       '<aside class="admin" id="adminPanel" aria-hidden="true"><div class="admin__head"><h3>🔔 Live Orders</h3>' +
@@ -736,6 +879,7 @@
   /* ---------------- Wire shared controls ---------------- */
   function initSharedControls() {
     var cartBtn = $("#cartBtn"); if (cartBtn) cartBtn.addEventListener("click", openDrawer);
+    var fabCart = $("#fabCart"); if (fabCart) fabCart.addEventListener("click", openDrawer);
     var dc = $("#drawerClose"); if (dc) dc.addEventListener("click", closeDrawer);
     var bd = $("#drawerBackdrop"); if (bd) bd.addEventListener("click", closeDrawer);
     var cb = $("#checkoutBtn"); if (cb) cb.addEventListener("click", function () { closeDrawer(); openCheckout(); });
@@ -823,6 +967,10 @@
     initSharedControls();
     connectAdmin();
     initReveal();
+    restoreSavedAddress();
+    // Delivery-fee transparency link -> explanation modal.
+    var infoLink = $("#deliveryInfoLink");
+    if (infoLink) infoLink.addEventListener("click", function (e) { e.preventDefault(); openModal("#deliveryInfoModal"); });
     applyHours();
 
     var yearEl = $("#year"); if (yearEl) yearEl.textContent = new Date().getFullYear();
