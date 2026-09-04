@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Kitchen Portal — Cyril's Foods (Staff)</title>
+  <meta name="theme-color" content="#1e5c24" />
+  <link rel="icon" href="assets/logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="kitchen.css" />
+</head>
+<body data-page="kitchen" class="kitchen-body">
+
+  <!-- PIN gate -->
+  <div class="kpin" id="pinGate">
+    <form class="kpin__card" id="pinForm" autocomplete="off">
+      <img src="assets/logo.png" alt="" class="kpin__logo" />
+      <h1>Kitchen Portal</h1>
+      <p class="kpin__sub">Authorized staff only. Enter your 4–6 digit kitchen passcode.</p>
+      <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]{4,6}" maxlength="6"
+             placeholder="••••" aria-label="Kitchen passcode" required />
+      <button type="submit" class="btn btn--primary" id="pinSubmit" style="width:100%;justify-content:center">Unlock</button>
+      <p class="kpin__error" id="pinError" hidden>Incorrect passcode. Try again.</p>
+      <a href="index.html" class="kpin__back">← Back to site</a>
+    </form>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="kdash" id="dash" hidden>
+    <header class="kdash__head">
+      <div class="kdash__brand">
+        <img src="assets/logo.png" alt="" />
+        <div>
+          <h1>Cyril's Kitchen</h1>
+          <small>Live order dashboard</small>
+        </div>
+      </div>
+      <div class="kdash__head-actions">
+        <span class="kdash__live" id="kLive"><span class="kdash__dot"></span> connecting…</span>
+        <button class="btn btn--sm" id="soundToggle">🔔 Chime: On</button>
+        <button class="btn btn--sm btn--ghost" id="logoutBtn">Lock</button>
+      </div>
+    </header>
+
+    <section class="kdash__controls">
+      <div class="kctrl">
+        <div>
+          <strong>Kitchen status</strong>
+          <small>Force-close ordering even within business hours.</small>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="closedToggle" />
+          <span class="switch__track"><span class="switch__thumb"></span></span>
+          <span class="switch__label" id="closedLabel">Open</span>
+        </label>
+      </div>
+      <div class="kctrl kctrl--stock">
+        <div>
+          <strong>Mark item sold out</strong>
+          <small>Toggle any menu item; customers instantly see "Sold Out".</small>
+        </div>
+        <div class="kstock">
+          <input type="search" id="stockSearch" placeholder="Search menu item…" aria-label="Search item" />
+          <div class="kstock__list" id="stockList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="kdash__orders">
+      <h2>Verified Orders <span id="orderCount" class="kbadge">0</span> <span class="kdash__pending" id="ackNote"></span></h2>
+      <div id="kOrders" class="korders">
+        <p class="korders__empty">Waiting for paid orders… verified payments appear here instantly and chime until acknowledged.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Chime audio (loops until acknowledge) -->
+  <audio id="chimeAudio" preload="auto" loop></audio>
+
+  <script src="catalog.js"></script>
+  <script src="kitchen.js"></script>
+</body>
+</html>

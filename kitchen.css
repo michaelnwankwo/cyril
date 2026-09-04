@@ -1,0 +1,101 @@
+/* =============================================================
+   CYRIL'S FOODS — SECURE KITCHEN PORTAL STYLES (kitchen.html)
+   Layered on top of styles.css (uses the same brand variables).
+   ============================================================= */
+
+.kitchen-body { background: #f2f6f2; }
+
+/* ---------- PIN gate ---------- */
+.kpin { min-height: 100dvh; display: grid; place-items: center; padding: 1.5rem;
+  background: radial-gradient(700px 400px at 50% -10%, rgba(80,160,80,.18), transparent), linear-gradient(180deg, var(--green-050), #fff); }
+.kpin__card { width: min(400px, 100%); background: #fff; border-radius: 22px; box-shadow: var(--shadow-lg);
+  padding: 2.2rem 2rem; text-align: center; display: flex; flex-direction: column; gap: .9rem; border: 1px solid var(--line); }
+.kpin__logo { height: 72px; width: auto; margin: 0 auto; }
+.kpin__card h1 { font-family: var(--font-display); color: var(--green-900); font-size: 1.7rem; }
+.kpin__sub { color: var(--ink-500); font-size: .92rem; }
+#pinInput { width: 100%; text-align: center; font-size: 1.8rem; letter-spacing: .5em; text-indent: .5em;
+  padding: .9rem 1rem; border: 2px solid var(--line); border-radius: 14px; outline: none; transition: border .2s; }
+#pinInput:focus { border-color: var(--green-500); }
+.kpin__error { color: #c0392b; font-weight: 600; font-size: .9rem; }
+.kpin__back { color: var(--ink-500); font-size: .88rem; text-decoration: underline; margin-top: .3rem; }
+
+/* ---------- Dashboard ---------- */
+.kdash { display: none; }
+.kdash.is-auth { display: block; min-height: 100dvh; }
+.kdash__head { background: linear-gradient(135deg, var(--green-800), var(--green-900)); color: #fff;
+  padding: 1rem 1.4rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  position: sticky; top: 0; z-index: 20; box-shadow: var(--shadow-md); }
+.kdash__brand { display: flex; align-items: center; gap: .8rem; }
+.kdash__brand img { height: 46px; width: auto; background: #fff; border-radius: 10px; padding: 4px; }
+.kdash__brand h1 { font-family: var(--font-display); font-size: 1.3rem; line-height: 1.1; }
+.kdash__brand small { opacity: .85; font-size: .8rem; }
+.kdash__head-actions { display: flex; align-items: center; gap: .6rem; }
+.kdash__head .btn--ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
+.kdash__live { font-size: .85rem; font-weight: 600; display: inline-flex; align-items: center; gap: .4rem; }
+.kdash__dot { width: 9px; height: 9px; border-radius: 50%; background: #ffb020; display: inline-block; }
+.kdash__live.is-live .kdash__dot { background: #37e07a; box-shadow: 0 0 0 4px rgba(55,224,122,.25); }
+.kdash__live.is-err .kdash__dot { background: #ff5a52; }
+
+.kdash__controls { max-width: 1100px; margin: 1.4rem auto 0; padding: 0 1.2rem; display: grid; gap: 1rem; }
+.kctrl { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--line);
+  padding: 1.1rem 1.3rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.kctrl strong { display: block; color: var(--green-900); }
+.kctrl small { color: var(--ink-500); font-size: .85rem; }
+
+/* Toggle switch */
+.switch { display: inline-flex; align-items: center; gap: .7rem; cursor: pointer; }
+.switch input { display: none; }
+.switch__track { width: 56px; height: 30px; border-radius: 999px; background: #c7d4c7; position: relative; transition: background .25s; flex-shrink: 0; }
+.switch__thumb { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .25s var(--ease); }
+.switch input:checked + .switch__track { background: var(--orange-600); }
+.switch input:checked + .switch__track .switch__thumb { transform: translateX(26px); }
+.switch__label { font-weight: 700; color: var(--green-800); }
+.switch input:checked ~ .switch__label { color: var(--orange-700); }
+
+/* Stock control */
+.kctrl--stock { align-items: flex-start; }
+.kstock { flex: 1; min-width: 260px; }
+.kstock input { width: 100%; padding: .65rem .9rem; border: 1.5px solid var(--line); border-radius: 10px; outline: none; }
+.kstock input:focus { border-color: var(--green-500); }
+.kstock__list { margin-top: .6rem; max-height: 200px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; }
+.kstock__item { display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  padding: .55rem .8rem; border-bottom: 1px solid var(--line); font-size: .9rem; }
+.kstock__item:last-child { border-bottom: none; }
+.kstock__item button { font-size: .78rem; font-weight: 700; padding: .3rem .7rem; border-radius: 999px; white-space: nowrap; }
+.kstock__item button.off { background: var(--green-100); color: var(--green-800); }
+.kstock__item button.on { background: var(--ink-500); color: #fff; }
+.kstock__empty { padding: .8rem; color: var(--ink-500); font-size: .85rem; }
+
+/* Orders */
+.kdash__orders { max-width: 1100px; margin: 1.6rem auto 3rem; padding: 0 1.2rem; }
+.kdash__orders h2 { font-family: var(--font-display); color: var(--green-900); font-size: 1.4rem; margin-bottom: 1rem;
+  display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.kbadge { background: var(--orange-600); color: #fff; font-size: .8rem; padding: .1rem .6rem; border-radius: 999px; }
+.kdash__pending { font-size: .85rem; color: var(--orange-700); font-weight: 700; font-family: var(--font-body); }
+.korders { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.korders__empty { color: var(--ink-500); background: #fff; border: 1px dashed var(--line); border-radius: var(--radius);
+  padding: 2rem; text-align: center; grid-column: 1 / -1; }
+
+.korder { background: #fff; border-radius: var(--radius); border: 1px solid var(--line); box-shadow: var(--shadow-sm);
+  padding: 1.1rem 1.2rem; border-left: 5px solid var(--green-500); animation: kslide .4s var(--ease); }
+.korder--unacked { border-left-color: var(--orange-600); box-shadow: 0 0 0 3px rgba(240,112,0,.18), var(--shadow-md); }
+@keyframes kslide { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+.korder__head { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; margin-bottom: .5rem; }
+.korder__id { font-weight: 800; color: var(--green-900); }
+.korder__amt { font-weight: 800; color: var(--orange-700); white-space: nowrap; }
+.korder__time { font-size: .76rem; color: var(--ink-300); }
+.korder__meta { font-size: .9rem; color: var(--ink-700); line-height: 1.5; }
+.korder__items { font-size: .84rem; color: var(--ink-500); border-top: 1px dashed var(--line); margin-top: .6rem; padding-top: .6rem; }
+.korder__items div { margin-bottom: .15rem; }
+.korder__acts { display: flex; gap: .5rem; margin-top: .9rem; }
+.korder__acts a, .korder__acts button { flex: 1; text-align: center; padding: .55rem; border-radius: 999px; font-size: .85rem; font-weight: 700; cursor: pointer; }
+.korder__wa { background: #25d366; color: #fff; }
+.korder__call { background: var(--green-100); color: var(--green-800); }
+.korder__ack { background: var(--green-800); color: #fff; }
+.korder.is-acked { opacity: .72; border-left-color: var(--green-500); }
+
+@media (max-width: 620px) {
+  .kdash__brand h1 { font-size: 1.05rem; }
+  .korders { grid-template-columns: 1fr; }
+}

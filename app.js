@@ -79,14 +79,18 @@
     var mins = t.hour * 60 + t.minute;
     return mins >= BRAND.openHour * 60 && mins < BRAND.closeHour * 60;
   }
-  function applyHours() {
-    state.open = isOpenNow();
+  // Renders the announcement bar + ordering controls based on state.open.
+  // state.open is true ONLY during business hours (9 AM – 7 PM WAT) AND when
+  // staff haven't force-closed the kitchen. The closed banner therefore shows
+  // exclusively outside opening hours (7:01 PM – 8:59 AM) or on a staff closure.
+  function applyHoursUI() {
     var bar = $("#statusBar"), txt = $("#statusText"), hrs = $("#statusHours");
     if (state.open) {
       // Declutter: hide the announcement bar entirely during open hours.
       if (bar) bar.hidden = true;
+      $$(".dish__add, #checkoutBtn, #addCartBtn").forEach(function (b) { b.disabled = false; });
     } else {
-      // Only show the closed-hours banner after 7 PM / before 9 AM.
+      // Closed: either before 9 AM / after 7 PM, or staff force-closed.
       if (bar) {
         bar.hidden = false;
         bar.classList.remove("statusbar--open");
@@ -97,6 +101,10 @@
       $$(".dish__add, #checkoutBtn, #addCartBtn").forEach(function (b) { b.disabled = true; });
     }
     if (typeof state.gridRenderer === "function") state.gridRenderer();
+  }
+  function applyHours() {
+    state.open = isOpenNow();          // clock-based opening (9 AM – 7 PM WAT)
+    applyHoursUI();
   }
 
   /* ---------------- Distance / maps engine ---------------- */
@@ -351,13 +359,14 @@
   function findItem(id) { return MENU.find(function (m) { return m.id === id; }); }
 
   function cardHTML(m) {
-    var closed = !state.open;
+    var itemOos = state.oosIds && state.oosIds.indexOf(m.id) !== -1;
+    var unavailable = !state.open || itemOos;
     var hasMods = m.modifiers && m.modifiers.length;
-    return '<article class="dish' + (closed ? " dish--oos" : "") + '" data-id="' + m.id + '">' +
+    return '<article class="dish' + (unavailable ? " dish--oos" : "") + '" data-id="' + m.id + '">' +
       '<div class="dish__img">' +
         '<img src="' + m.image + '" alt="' + esc(m.name) + '" loading="lazy" />' +
         (m.popular ? '<span class="dish__tag' + (m.id.indexOf("combo") === 0 ? " dish__tag--combo" : "") + '">⭐ Popular</span>' : "") +
-        (closed ? '<span class="dish__oos">Out of Stock</span>'
+        (unavailable ? '<span class="dish__oos">' + (itemOos ? "Sold Out" : "Out of Stock") + "</span>"
                 : '<button class="dish__add" data-id="' + m.id + '" aria-label="Add ' + esc(m.name) + '">+</button>') +
       "</div>" +
       '<div class="dish__body">' +
@@ -539,7 +548,7 @@
     updateFabCart();
   }
 
-  /* Floating cart bar (menu page only) */
+  /* Floating sticky cart bar (all public pages) */
   function updateFabCart() {
     var fab = $("#fabCart");
     if (!fab) return;
@@ -675,54 +684,27 @@
       .catch(function () { return false; });
   }
 
-  /* ---------------- Admin panel (SSE + chime) ---------------- */
-  var adminSound = true, audioCtx = null;
-  function playChime() {
-    if (!adminSound) return;
-    try {
-      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-      [880, 1108, 1318].forEach(function (f, i) {
-        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
-        o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
-        var t = audioCtx.currentTime + i * 0.16;
-        g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
-        o.start(t); o.stop(t + 0.4);
-      });
-    } catch (e) {}
-  }
-  function addAdminOrder(order) {
-    var panel = $("#adminOrders"); if (!panel) return;
-    var empty = panel.querySelector(".admin__empty"); if (empty) empty.remove();
-    var el = document.createElement("div"); el.className = "admin-order";
-    var items = order.items.map(function (i) {
-      return i.qty + "× " + i.name + (i.options && i.options.length ? " (" + i.options.join(", ") + ")" : ""); }).join("<br>");
-    var wa = "https://wa.me/" + BRAND.whatsapp + "?text=" + encodeURIComponent(
-      "New paid order " + order.reference + " from " + order.customer.name +
-      ". Total " + money(order.total) + ". Address: " + (order.address ? order.address.description : "n/a"));
-    el.innerHTML =
-      '<div class="admin-order__head"><span class="admin-order__id">#' + esc(order.reference) + '</span>' +
-      '<span class="admin-order__amt">' + money(order.total) + '</span></div>' +
-      '<div class="admin-order__meta"><strong>' + esc(order.customer.name) + "</strong> · " + esc(order.customer.phone || "") + "<br>" +
-      "📍 " + esc(order.address ? order.address.description : "—") +
-      (order.address ? " <em>(" + order.address.distanceKm + " km, fee " + money(order.address.fee) + ")</em>" : "") +
-      (order.note ? "<br>📝 " + esc(order.note) : "") + "</div>" +
-      '<div class="admin-order__items">' + items + "</div>" +
-      '<div class="admin-order__actions"><a class="admin-order__wa" href="' + wa + '" target="_blank" rel="noopener">WhatsApp customer</a>' +
-      '<a class="admin-order__call" href="tel:' + esc((order.customer.phone || "").replace(/\s/g, "")) + '">Call</a></div>';
-    panel.prepend(el); playChime();
-    var fab = $("#adminFab"); if (fab) fab.classList.add("has-new");
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-  }
-  function connectAdmin() {
-    var status = $("#adminStatus");
-    try {
-      var es = new EventSource(CONFIG.apiBase + "/api/orders/stream");
-      es.onopen = function () { if (status) { status.textContent = "live"; status.classList.add("is-live"); } };
-      es.onmessage = function (ev) { try { addAdminOrder(JSON.parse(ev.data)); } catch (e) {} };
-      es.onerror = function () { if (status) { status.textContent = "offline (static preview)"; status.classList.remove("is-live"); } };
-    } catch (e) { if (status) status.textContent = "offline"; }
+  /* ---------------- Public kitchen status (overrides only) ----------------
+     Live orders are NEVER exposed publicly. The kitchen portal (secret page +
+     PIN) owns the authenticated order stream. Here we only fetch a public
+     status snapshot (manual closed toggle + out-of-stock item ids) so the
+     storefront reflects staff overrides. */
+  function fetchKitchenStatus() {
+    if (!CONFIG.apiBase) return Promise.resolve(null);
+    return fetch(CONFIG.apiBase + "/api/status", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) {
+        if (!s) return null;
+        state.kitchen = s;
+        state.oosIds = Array.isArray(s.outOfStock) ? s.outOfStock : [];
+        // Staff force-closure overrides the clock; otherwise fall back to the
+        // real Lagos business-hours clock (9 AM – 7 PM) so an override being
+        // lifted correctly re-opens ordering without a page refresh.
+        state.open = s.manualClosed === true ? false : isOpenNow();
+        applyHoursUI();
+        return s;
+      })
+      .catch(function () { return null; });
   }
 
   /* ---------------- Shared overlay injection ---------------- */
@@ -734,14 +716,12 @@
       '<a class="fab-wa" href="https://wa.me/2348081988184?text=Hello%20Cyril%27s%20Foods!%20I%20want%20to%20order." target="_blank" rel="noopener" aria-label="Chat on WhatsApp">' +
         '<svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.512 5.26l-.999 3.648 3.976-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg></a>' +
 
-      // Floating cart bar — menu page only.
-      (PAGE === "menu"
-        ? '<button class="fab-cart" id="fabCart" aria-label="View cart">' +
-            '<span class="fab-cart__icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>' +
-            '<span class="fab-cart__label"><small id="fabCartMeta">Your cart</small><strong id="fabCartTotal">₦0</strong></span>' +
-            '<span class="fab-cart__count" id="fabCartCount">0</span>' +
-          "</button>"
-        : "") +
+      // Floating sticky cart bar — every public page (opens cart drawer anywhere).
+      '<button class="fab-cart" id="fabCart" aria-label="View cart">' +
+        '<span class="fab-cart__icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>' +
+        '<span class="fab-cart__label"><small id="fabCartMeta">Your cart</small><strong id="fabCartTotal">₦0</strong></span>' +
+        '<span class="fab-cart__count" id="fabCartCount">0</span>' +
+      "</button>" +
 
       '<div class="drawer-backdrop" id="drawerBackdrop"></div>' +
       '<aside class="drawer" id="cartDrawer" aria-label="Shopping cart" aria-hidden="true">' +
@@ -815,13 +795,6 @@
           '<p class="info-modal__eg">e.g. a 7&nbsp;km route → 7 × ₦1,100 = <strong>₦7,700</strong>, added to your order at checkout.</p>' +
           '<button class="btn btn--primary" data-close-modal style="width:100%;justify-content:center">Got it</button>' +
         "</div></div></div>" +
-
-      '<button class="admin-fab" id="adminFab" title="Admin panel">🔔</button>' +
-      '<aside class="admin" id="adminPanel" aria-hidden="true"><div class="admin__head"><h3>🔔 Live Orders</h3>' +
-        '<div class="admin__controls"><span class="admin__status" id="adminStatus">connecting…</span>' +
-        '<button id="adminSound" class="admin__sound" title="Toggle chime">🔊</button>' +
-        '<button id="adminClose" class="drawer__close">&times;</button></div></div>' +
-        '<div class="admin__body" id="adminOrders"><p class="admin__empty">Waiting for paid orders… verified payments appear here instantly with a chime.</p></div></aside>' +
 
       '<div class="toast-wrap" id="toastWrap" aria-live="polite"></div>';
     document.body.appendChild(holder);
@@ -926,18 +899,6 @@
     });
     $("#successClose").addEventListener("click", function () { closeModal("#successModal"); });
 
-    $("#adminFab").addEventListener("click", function () {
-      $("#adminPanel").classList.add("is-open"); $("#adminPanel").setAttribute("aria-hidden", "false");
-      $("#adminFab").classList.remove("has-new"); document.body.classList.add("no-scroll");
-    });
-    $("#adminClose").addEventListener("click", function () {
-      $("#adminPanel").classList.remove("is-open"); $("#adminPanel").setAttribute("aria-hidden", "true");
-      if (!$$(".modal.is-open").length && !$("#cartDrawer").classList.contains("is-open")) document.body.classList.remove("no-scroll");
-    });
-    $("#adminSound").addEventListener("click", function () {
-      adminSound = !adminSound; $("#adminSound").textContent = adminSound ? "🔊" : "🔇";
-    });
-
     // Autocompletes
     initAutocomplete($("#coAddress"), $("#coSuggestions"), function (p) { resolveRoute(p, "checkout"); });
     initAutocomplete($("#calcAddress"), $("#calcSuggestions"), function (p) { resolveRoute(p, "estimate"); });
@@ -965,7 +926,8 @@
     bumpBadge();
     initNav();
     initSharedControls();
-    connectAdmin();
+    fetchKitchenStatus();
+    setInterval(fetchKitchenStatus, 45 * 1000); // pick up staff closed / sold-out overrides
     initReveal();
     restoreSavedAddress();
     // Delivery-fee transparency link -> explanation modal.

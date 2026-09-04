@@ -46,10 +46,107 @@ const config = {
 
 const app = express();
 
-/* Raw body is required for signature verification — verify BEFORE json parser. */
+/* ---- Kitchen portal security ----
+   PIN is verified server-side against KITCHEN_PIN (default 8818 — CHANGE in prod).
+   A successful login mints an HMAC-signed session token (no JWT dependency). */
+const KITCHEN_PIN = process.env.KITCHEN_PIN || "8818";
+const TOKEN_SECRET = process.env.TOKEN_SECRET || process.env.PAYSTACK_SECRET_KEY || ("cyrils-kitchen-" + KITCHEN_PIN);
+const TOKEN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
+
+function b64url(s) { return Buffer.from(s).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function signToken(payload) {
+  const body = b64url(JSON.stringify(payload));
+  const sig = crypto.createHmac("sha256", TOKEN_SECRET).update(body).digest("hex").slice(0, 32);
+  return body + "." + sig;
+}
+function verifyToken(token) {
+  if (!token || typeof token !== "string" || token.indexOf(".") === -1) return null;
+  const dot = token.lastIndexOf(".");
+  const body = token.slice(0, dot), sig = token.slice(dot + 1);
+  const expect = crypto.createHmac("sha256", TOKEN_SECRET).update(body).digest("hex").slice(0, 32);
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return null;
+    const payload = JSON.parse(Buffer.from(body.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+    if (!payload.exp || Date.now() > payload.exp) return null;
+    return payload;
+  } catch (e) { return null; }
+}
+function extractToken(req) {
+  const auth = req.headers["authorization"] || "";
+  if (auth.indexOf("Bearer ") === 0) return auth.slice(7);
+  const q = new URL(req.url, "http://x").searchParams.get("token"); // SSE can't set headers via EventSource
+  return q || null;
+}
+// Auth middleware — blocks all unauthorized kitchen requests with 401.
+function requireKitchen(req, res, next) {
+  const payload = verifyToken(extractToken(req));
+  if (!payload) return res.status(401).json({ status: "error", message: "Unauthorized — valid kitchen session required." });
+  req.kitchen = payload;
+  next();
+}
+
+/* Raw body is required for Paystack signature verification — BEFORE json parser. */
 app.use("/api/paystack/webhook", express.raw({ type: "*/*" }));
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(__dirname));
+
+/* ---- Staff overrides state (manual closed / sold-out items) ---- */
+const kitchenStatusFile = path.join(__dirname, "kitchen-status.json");
+let kitchenStatus = { manualClosed: false, outOfStock: [] };
+try { if (fs.existsSync(kitchenStatusFile)) kitchenStatus = JSON.parse(fs.readFileSync(kitchenStatusFile, "utf8")); } catch (e) {}
+function saveKitchenStatus() { try { fs.writeFileSync(kitchenStatusFile, JSON.stringify(kitchenStatus, null, 2)); } catch (e) {} }
+
+/* PUBLIC status snapshot (no order data) — storefront uses this for overrides. */
+app.get("/api/status", function (req, res) {
+  res.json({ manualClosed: !!kitchenStatus.manualClosed, outOfStock: kitchenStatus.outOfStock || [], time: new Date().toISOString() });
+});
+
+/* ---- Kitchen auth ---- */
+app.post("/api/kitchen/login", function (req, res) {
+  const pin = String((req.body && req.body.pin) || "").trim();
+  const expected = String(KITCHEN_PIN);
+  let ok = false;
+  if (pin.length === expected.length) {
+    try { ok = crypto.timingSafeEqual(Buffer.from(pin), Buffer.from(expected)); } catch (e) { ok = false; }
+  }
+  if (!ok) return res.status(401).json({ status: "error", message: "Incorrect kitchen passcode." });
+  const token = signToken({ role: "kitchen", exp: Date.now() + TOKEN_TTL_MS });
+  res.json({ status: "ok", token: token, expiresIn: TOKEN_TTL_MS / 1000 });
+});
+
+/* Authenticated kitchen endpoints */
+app.get("/api/kitchen/orders", requireKitchen, function (req, res) {
+  res.json(orders.filter(function (o) { return o.status === "paid"; }).slice(-50).reverse());
+});
+
+app.post("/api/kitchen/control", requireKitchen, function (req, res) {
+  const body = req.body || {};
+  if (typeof body.manualClosed === "boolean") kitchenStatus.manualClosed = body.manualClosed;
+  if (Array.isArray(body.outOfStock)) kitchenStatus.outOfStock = body.outOfStock.map(String).slice(0, 500);
+  if (Array.isArray(body.toggleItem)) {
+    const id = String(body.toggleItem[0]);
+    const on = !!body.toggleItem[1];
+    const set = new Set(kitchenStatus.outOfStock);
+    if (on) set.add(id); else set.delete(id);
+    kitchenStatus.outOfStock = Array.from(set);
+  }
+  kitchenStatus.updatedAt = new Date().toISOString();
+  saveKitchenStatus();
+  res.json({ status: "ok", kitchenStatus: kitchenStatus });
+});
+
+/* Authenticated live-order SSE stream for the kitchen portal. */
+app.get("/api/kitchen/stream", requireKitchen, function (req, res) {
+  res.set({ "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" });
+  res.flushHeaders && res.flushHeaders();
+  res.write("retry: 5000\n\n");
+  orders.filter(function (o) { return o.status === "paid"; }).slice(-15).reverse().forEach(function (o) {
+    res.write("data: " + JSON.stringify(o) + "\n\n");
+  });
+  sseClients.add(res);
+  const ka = setInterval(function () { try { res.write(":ka\n\n"); } catch (e) {} }, 25000);
+  req.on("close", function () { clearInterval(ka); sseClients.delete(res); });
+});
 
 /* ---------------- Tiny in-memory + file order store ---------------- */
 let orders = [];
@@ -60,7 +157,7 @@ function saveOrders() {
   try { fs.writeFileSync(config.ordersFile, JSON.stringify(orders, null, 2)); } catch (e) {}
 }
 
-/* SSE client pool for the admin panel */
+/* SSE client pool — only authenticated kitchen portal streams subscribe. */
 const sseClients = new Set();
 function broadcast(order) {
   const payload = JSON.stringify(order);
@@ -306,42 +403,24 @@ app.post("/api/paystack/webhook", async function (req, res) {
   console.log("   WhatsApp dispatch:", JSON.stringify(dispatch));
 });
 
-/* ---------------- Admin SSE stream ---------------- */
-app.get("/api/orders/stream", function (req, res) {
-  res.set({
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-  });
-  res.flushHeaders && res.flushHeaders();
-  res.write("retry: 5000\n\n");
-  // Send recent paid orders immediately.
-  orders.filter((o) => o.status === "paid").slice(-10).reverse().forEach(function (o) {
-    res.write("data: " + JSON.stringify(o) + "\n\n");
-  });
-  sseClients.add(res);
-  const ka = setInterval(function () { try { res.write(":ka\n\n"); } catch (e) {} }, 25000);
-  req.on("close", function () { clearInterval(ka); sseClients.delete(res); });
-});
-
-/* ---------------- Admin JSON (debug/back-office) ---------------- */
-app.get("/api/orders", function (req, res) { res.json(orders); });
-
-/* ---------------- Health ---------------- */
+/* ---------------- Health (no sensitive data) ---------------- */
 app.get("/api/health", function (req, res) {
   res.json({
     ok: true,
     service: "Cyril's Foods API",
     paystackConfigured: !!config.paystackSecretKey,
-    whatsappProviders: {
-      twilio: !!(config.twilio.sid && config.twilio.auth),
-      greenApi: !!(config.greenApi.instance && config.greenApi.token),
-    },
     origin: { lat: config.originLat, lng: config.originLng, address: config.originAddress },
     ratePerKm: config.ratePerKm,
     time: new Date().toISOString(),
   });
 });
+
+/* ---------------- SECRET KITCHEN PORTAL ROUTE ----------------
+   Staff-only page (no link anywhere on the public site). Served at a
+   non-obvious URL; the dashboard itself is still PIN-gated client+server side.
+   Tip: rename kitchen.html / the path to something even more secret. */
+app.get("/kitchen-portal", function (req, res) { res.sendFile(path.join(__dirname, "kitchen.html")); });
+app.get("/cyril-kitchen-9082", function (req, res) { res.sendFile(path.join(__dirname, "kitchen.html")); });
 
 /* SPA fallback for any non-API route. */
 app.get("*", function (req, res) { res.sendFile(path.join(__dirname, "index.html")); });

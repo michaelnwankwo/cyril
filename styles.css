@@ -405,28 +405,33 @@ input, select { font-family: inherit; font-size: 1rem; }
   transition: transform .22s var(--ease); }
 .fab-wa:hover { transform: scale(1.1) rotate(8deg); }
 
-/* ---------- Floating cart bar (menu page only, injected by app.js) ---------- */
+/* ---------- Floating sticky cart bar (bottom-right, opposite WhatsApp) ---------- */
 .fab-cart {
-  position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 160%);
+  position: fixed; right: 22px; bottom: 22px;
   z-index: 940; display: inline-flex; align-items: center; gap: .7rem;
-  padding: .85rem 1.5rem; border-radius: var(--radius-pill);
+  padding: .85rem 1.4rem; border-radius: var(--radius-pill);
   background: linear-gradient(135deg, var(--green-700), var(--green-900)); color: #fff;
   font-weight: 700; font-size: 1rem; box-shadow: 0 14px 34px rgba(24,50,28,.42);
-  transition: transform .42s var(--ease), opacity .35s, box-shadow .2s;
-  opacity: 0; pointer-events: none; border: 2px solid rgba(255,255,255,.22); white-space: nowrap;
+  transition: transform .42s var(--ease), opacity .35s, box-shadow .2s, background .25s;
+  opacity: 0; transform: translateY(160%); pointer-events: none;
+  border: 2px solid rgba(255,255,255,.22); white-space: nowrap;
 }
-.fab-cart.is-shown { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.fab-cart.is-shown { transform: translateY(0); opacity: 1; pointer-events: auto; }
 .fab-cart.is-shown.has-items { background: linear-gradient(135deg, var(--orange-500), var(--orange-600)); box-shadow: var(--shadow-orange); }
-.fab-cart:hover { transform: translate(-50%, -3px); box-shadow: 0 18px 40px rgba(240,112,0,.5); }
+.fab-cart.is-shown:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(240,112,0,.5); }
 .fab-cart__icon { display: flex; align-items: center; }
-.fab-cart__label { display: flex; flex-direction: column; line-height: 1.15; }
-.fab-cart__label small { font-size: .74rem; font-weight: 600; opacity: .85; }
+.fab-cart__label { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.fab-cart__label small { font-size: .74rem; font-weight: 600; opacity: .88; }
 .fab-cart__label strong { font-size: 1.02rem; }
 .fab-cart__count { background: var(--orange-600); color: #fff; min-width: 24px; height: 24px; border-radius: 50%;
   display: grid; place-items: center; font-size: .8rem; font-weight: 800; padding: 0 7px; }
 .fab-cart.is-shown.has-items .fab-cart__count { background: #fff; color: var(--orange-700); }
 @media (max-width: 720px) {
-  .fab-cart { bottom: 96px; padding: .75rem 1.3rem; }
+  /* Sits above the bottom edge; WhatsApp FAB stays at bottom-left, no overlap. */
+  .fab-cart { right: 16px; bottom: 88px; padding: .7rem 1.15rem; }
+  .fab-cart__label { display: none; }                 /* icon + count only on small phones */
+  .fab-cart { gap: .4rem; }
+  .fab-cart.is-shown.has-items .fab-cart__label { display: flex; } /* show total once items added */
 }
 
 /* ---------- Cart drawer ---------- */
@@ -527,36 +532,6 @@ input, select { font-family: inherit; font-size: 1rem; }
 .success h3 { font-family: var(--font-display); font-size: 1.6rem; color: var(--green-900); margin-bottom: .5rem; }
 .success p { color: var(--ink-500); margin-bottom: 1rem; }
 .success__ref { background: var(--green-050); border-radius: var(--radius-sm); padding: .6rem; font-size: .9rem; margin-bottom: 1.2rem; color: var(--ink-700); }
-
-/* ---------- Admin panel ---------- */
-.admin-fab { position: fixed; bottom: 22px; right: 22px; z-index: 950; width: 54px; height: 54px; border-radius: 50%;
-  background: var(--green-800); font-size: 1.3rem; box-shadow: var(--shadow-md); display: grid; place-items: center; transition: .2s; }
-.admin-fab:hover { transform: translateY(-3px); }
-.admin-fab.has-new { animation: chimePulse 1s infinite; }
-@keyframes chimePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(240,112,0,.6); } 50% { box-shadow: 0 0 0 14px rgba(240,112,0,0); } }
-.admin { position: fixed; top: 0; right: 0; height: 100dvh; width: min(400px, 94vw); background: #fff; z-index: 1250;
-  transform: translateX(105%); transition: transform .4s var(--ease); display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
-.admin.is-open { transform: translateX(0); }
-.admin__head { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.4rem; background: var(--green-900); color: #fff; }
-.admin__head h3 { font-size: 1.15rem; }
-.admin__controls { display: flex; align-items: center; gap: .6rem; }
-.admin__status { font-size: .72rem; padding: .2rem .6rem; border-radius: var(--radius-pill); background: rgba(255,255,255,.15); }
-.admin__status.is-live { background: #2fbf6a; }
-.admin__sound { font-size: 1.1rem; }
-.admin__body { flex: 1; overflow-y: auto; padding: 1.2rem 1.4rem; }
-.admin__empty { color: var(--ink-500); text-align: center; font-size: .9rem; padding-top: 2rem; }
-.admin-order { border: 1px solid var(--line); border-left: 4px solid var(--green-500); border-radius: var(--radius-sm);
-  padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow-sm); animation: slideIn .4s var(--ease); }
-@keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-.admin-order__head { display: flex; justify-content: space-between; gap: .5rem; margin-bottom: .5rem; }
-.admin-order__id { font-weight: 800; color: var(--green-900); }
-.admin-order__amt { font-weight: 800; color: var(--orange-700); }
-.admin-order__meta { font-size: .85rem; color: var(--ink-700); line-height: 1.5; }
-.admin-order__items { font-size: .82rem; color: var(--ink-500); margin-top: .5rem; border-top: 1px dashed var(--line); padding-top: .5rem; }
-.admin-order__actions { display: flex; gap: .5rem; margin-top: .8rem; }
-.admin-order__actions a { flex: 1; text-align: center; padding: .5rem; border-radius: var(--radius-pill); font-size: .82rem; font-weight: 700; }
-.admin-order__wa { background: #25d366; color: #fff; }
-.admin-order__call { background: var(--green-100); color: var(--green-800); }
 
 /* ---------- Toasts ---------- */
 .toast-wrap { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1600;
