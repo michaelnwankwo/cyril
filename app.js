@@ -947,31 +947,38 @@
     function stop() { if (raf != null) { cancelAnimationFrame(raf); raf = null; } }
 
     // --- interaction: pointer drag / wheel ---
+    var startY = 0, axis = null;  // axis lock so vertical drags still scroll the page
     viewport.addEventListener("pointerdown", function (e) {
-      down = true; dragging = false; moved = 0;
-      startX = e.clientX; startOff = offset; vel = 0;
-      viewport.classList.add("is-dragging");
-      try { viewport.setPointerCapture(e.pointerId); } catch (err) {}
+      down = true; dragging = false; moved = 0; axis = null;
+      startX = e.clientX; startY = e.clientY; startOff = offset; vel = 0;
+      // Do NOT setPointerCapture on touch — that would swallow the native
+      // vertical page scroll. Capture only for mouse drags.
+      if (e.pointerType === "mouse") { try { viewport.setPointerCapture(e.pointerId); } catch (err) {} }
     });
     window.addEventListener("pointermove", function (e) {
       if (!down) return;
-      var dx = e.clientX - startX;
-      if (Math.abs(dx) > 6) dragging = true;
-      moved = Math.abs(dx);
-      offset = startOff + dx;
-    });
+      var dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!axis) {
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";  // honour the first dominant axis
+        if (axis === "x") { dragging = true; viewport.classList.add("is-dragging"); }
+      }
+      if (axis === "x") { e.preventDefault && e.preventDefault(); moved = Math.abs(dx); offset = startOff + dx; }
+      else { down = false; }   // vertical: release, let the page scroll natively
+    }, { passive: true });
     window.addEventListener("pointerup", function (e) {
-      if (!down) return;
-      down = false;
+      if (!down && axis !== "x") { return; }
+      down = false; axis = null;
       viewport.classList.remove("is-dragging");
       try { viewport.releasePointerCapture(e.pointerId); } catch (err) {}
     });
+    // Only intercept HORIZONTAL wheel/trackpad input; vertical wheel scrolls the page.
     viewport.addEventListener("wheel", function (e) {
-      var d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (!d) return;
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;   // let vertical scroll pass
+      if (!e.deltaX) return;
       e.preventDefault();
-      offset += d * 0.6;
-      vel = d * 6;          // nudge momentum in scroll direction
+      offset += e.deltaX * 0.6;
+      vel = e.deltaX * 6;   // momentum along the strip
     }, { passive: false });
 
     // tap (not drag) → deep-link to the menu category
