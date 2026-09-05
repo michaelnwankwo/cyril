@@ -8,7 +8,7 @@
    • Local development (localhost / 127.0.0.1, incl. Live Server
      :5500): the backend is auto-detected on :3000 — leave as-is.
    • Production (Netlify static hosting): set API_BASE to your
-     deployed Render service URL, e.g. "https://cyrils-foods.onrender.com"
+     deployed Render service URL, e.g. "https://cyril-ab8l.onrender.com"
    • If you instead serve the whole site FROM the backend (same
      origin), an empty string "" is correct and keeps everything
      same-origin.
@@ -18,14 +18,15 @@ window.CYRIL_API_BASE = (function () {
   if (window.CYRIL_API_BASE) return window.CYRIL_API_BASE;
 
   var host = window.location.hostname || "";
-  var isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  var isLocal =
+    host === "localhost" || host === "127.0.0.1" || host === "[::1]";
   if (isLocal) return window.location.protocol + "//" + host + ":3000";
 
   // ┏━━ PRODUCTION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-  // ┃ Replace this with YOUR Render service URL after you ┃
-  // ┃ deploy server.js. No trailing slash.                 ┃
+  // ┃ Your deployed Render backend (no trailing slash).   ┃
+  // ┃ localhost is auto-detected above and uses :3000.    ┃
   // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-  return "https://cyrils-foods.onrender.com";
+  return "https://cyril-ab8l.onrender.com";
 })();
 
 /* Optional: Supabase Auth for fully-static magic links.
