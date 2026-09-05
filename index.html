@@ -1,690 +1,312 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      Cyril's Foods | Authentic Nigerian Party Jollof & Swallow Delivered in
-      Lagos
-    </title>
-    <meta
-      name="description"
-      content="Order smokey party jollof, silky swallow, rich soups, peppered protein and fresh-pressed drinks — made fresh daily and delivered hot across Lagos from 26 College Rd, Ifako-Ijaiye. Honest distance-based delivery pricing."
-    />
-    <meta name="theme-color" content="#2f7d32" />
-    <link rel="canonical" href="https://cyrilfoods.netlify.app/" />
-    <link rel="icon" href="assets/logo.png" type="image/png" />
-    <link rel="icon" href="favicon.ico" sizes="any" />
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cyril's Foods | Authentic Nigerian Party Jollof & Swallow Delivered in Lagos</title>
+  <meta name="description" content="Order smokey party jollof, silky swallow, rich soups, peppered protein and fresh-pressed drinks — made fresh daily and delivered hot across Lagos from 26 College Rd, Ifako-Ijaiye. Honest distance-based delivery pricing." />
+  <meta name="theme-color" content="#2f7d32" />
+  <link rel="canonical" href="https://cyrilfoods.netlify.app/" />
+  <link rel="icon" href="assets/logo.png" type="image/png" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
 
-    <!-- Open Graph (WhatsApp / Facebook / iMessage link preview) -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Cyril's Foods" />
-    <meta
-      property="og:title"
-      content="Cyril's Foods | Smokey Party Jollof & Authentic Dishes Delivered Hot"
-    />
-    <meta
-      property="og:description"
-      content="Order fresh, delicious Nigerian meals online. Fast delivery from 26 College Rd, Ifako-Ijaiye, Lagos directly to your door."
-    />
-    <meta property="og:url" content="https://cyrilfoods.netlify.app/" />
-    <meta
-      property="og:image"
-      content="https://cyrilfoods.netlify.app/assets/og-preview.png"
-    />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Smokey party jollof rice with peppered chicken, fresh drinks and Nigerian sides from Cyril's Foods"
-    />
-    <meta property="og:locale" content="en_NG" />
-    <!-- Twitter / X -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://cyrilfoods.netlify.app/" />
-    <meta
-      name="twitter:title"
-      content="Cyril's Foods | Authentic Nigerian Flavors Delivered Hot"
-    />
-    <meta
-      name="twitter:description"
-      content="Fresh party jollof, swallow, soups, and drinks made daily in Lagos. Order now online!"
-    />
-    <meta
-      name="twitter:image"
-      content="https://cyrilfoods.netlify.app/assets/og-preview.png"
-    />
+  <!-- Open Graph (WhatsApp / Facebook / iMessage link preview) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Cyril's Foods" />
+  <meta property="og:title" content="Cyril's Foods | Smokey Party Jollof & Authentic Dishes Delivered Hot" />
+  <meta property="og:description" content="Order fresh, delicious Nigerian meals online. Fast delivery from 26 College Rd, Ifako-Ijaiye, Lagos directly to your door." />
+  <meta property="og:url" content="https://cyrilfoods.netlify.app/" />
+  <meta property="og:image" content="https://cyrilfoods.netlify.app/assets/og-preview.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Smokey party jollof rice with peppered chicken, fresh drinks and Nigerian sides from Cyril's Foods" />
+  <meta property="og:locale" content="en_NG" />
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="https://cyrilfoods.netlify.app/" />
+  <meta name="twitter:title" content="Cyril's Foods | Authentic Nigerian Flavors Delivered Hot" />
+  <meta name="twitter:description" content="Fresh party jollof, swallow, soups, and drinks made daily in Lagos. Order now online!" />
+  <meta name="twitter:image" content="https://cyrilfoods.netlify.app/assets/og-preview.png" />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles.css" />
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Restaurant",
-        "@id": "https://cyrilfoods.netlify.app/#restaurant",
-        "name": "Cyril's Foods",
-        "description": "Authentic Nigerian restaurant serving smokey party jollof, swallow, soups, peppered protein, pastries and fresh drinks, delivered hot across Lagos.",
-        "servesCuisine": ["Nigerian", "African", "West African"],
-        "url": "https://cyrilfoods.netlify.app/",
-        "menu": "https://cyrilfoods.netlify.app/menu.html",
-        "image": [
-          "https://cyrilfoods.netlify.app/assets/hero-jollof.jpg",
-          "https://cyrilfoods.netlify.app/assets/brand-event.jpg"
-        ],
-        "email": "cyrilsfood@gmail.com",
-        "telephone": "+2348081988184",
-        "priceRange": "₦₦",
-        "currenciesAccepted": "NGN",
-        "paymentAccepted": "Cash, Card, Bank Transfer (Paystack)",
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "26 College Rd",
-          "addressLocality": "Ifako-Ijaiye",
-          "addressRegion": "Lagos",
-          "addressCountry": "NG"
-        },
-        "geo": {
-          "@type": "GeoCoordinates",
-          "latitude": 6.6427,
-          "longitude": 3.3288
-        },
-        "hasMap": "https://www.google.com/maps/search/?api=1&query=26+College+Rd,+Ifako-Ijaiye,+Lagos,+Nigeria",
-        "openingHoursSpecification": [
-          {
-            "@type": "OpeningHoursSpecification",
-            "dayOfWeek": [
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday"
-            ],
-            "opens": "09:00",
-            "closes": "19:00"
-          }
-        ],
-        "sameAs": [
-          "https://www.facebook.com/Cyrilsfoods",
-          "https://www.instagram.com/Cyrilsfoods",
-          "https://twitter.com/Cyrilsfoods"
-        ]
-      }
-    </script>
-    <script>
-      window.CYRIL_PAYSTACK_PK = window.CYRIL_PAYSTACK_PK || "";
-      window.CYRIL_GOOGLE_MAPS_KEY = window.CYRIL_GOOGLE_MAPS_KEY || "";
-    </script>
-  </head>
-  <body data-page="home">
-    <!-- Food loading transition -->
-    <div id="loader" class="loader" aria-hidden="true">
-      <div class="loader__plate">
-        <span class="loader__steam s1"></span
-        ><span class="loader__steam s2"></span
-        ><span class="loader__steam s3"></span>
-        <div class="loader__cloche">
-          <span class="loader__knob"></span><span class="loader__lid"></span
-          ><span class="loader__base"></span>
-        </div>
-      </div>
-      <p class="loader__text">Firing up Cyril's kitchen…</p>
-      <div class="loader__bar"></div>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "@id": "https://cyrilfoods.netlify.app/#restaurant",
+    "name": "Cyril's Foods",
+    "description": "Authentic Nigerian restaurant serving smokey party jollof, swallow, soups, peppered protein, pastries and fresh drinks, delivered hot across Lagos.",
+    "servesCuisine": ["Nigerian", "African", "West African"],
+    "url": "https://cyrilfoods.netlify.app/",
+    "menu": "https://cyrilfoods.netlify.app/menu.html",
+    "image": ["https://cyrilfoods.netlify.app/assets/hero-jollof.jpg","https://cyrilfoods.netlify.app/assets/brand-event.jpg"],
+    "email": "cyrilsfood@gmail.com",
+    "telephone": "+2348081988184",
+    "priceRange": "₦₦",
+    "currenciesAccepted": "NGN",
+    "paymentAccepted": "Cash, Card, Bank Transfer (Paystack)",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "26 College Rd",
+      "addressLocality": "Ifako-Ijaiye",
+      "addressRegion": "Lagos",
+      "addressCountry": "NG"
+    },
+    "geo": { "@type": "GeoCoordinates", "latitude": 6.6427, "longitude": 3.3288 },
+    "hasMap": "https://www.google.com/maps/search/?api=1&query=26+College+Rd,+Ifako-Ijaiye,+Lagos,+Nigeria",
+    "openingHoursSpecification": [{
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+      "opens": "09:00", "closes": "19:00"
+    }],
+    "sameAs": ["https://www.facebook.com/Cyrilsfoods","https://www.instagram.com/Cyrilsfoods","https://twitter.com/Cyrilsfoods"]
+  }
+  </script>
+  <script>
+    window.CYRIL_PAYSTACK_PK = window.CYRIL_PAYSTACK_PK || "";
+    window.CYRIL_GOOGLE_MAPS_KEY = window.CYRIL_GOOGLE_MAPS_KEY || "";
+  </script>
+</head>
+<body data-page="home">
+
+  <!-- Food loading transition -->
+  <div id="loader" class="loader" aria-hidden="true">
+    <div class="loader__plate">
+      <span class="loader__steam s1"></span><span class="loader__steam s2"></span><span class="loader__steam s3"></span>
+      <div class="loader__cloche"><span class="loader__knob"></span><span class="loader__lid"></span><span class="loader__base"></span></div>
     </div>
+    <p class="loader__text">Firing up Cyril's kitchen…</p>
+    <div class="loader__bar"></div>
+  </div>
 
-    <!-- Closed-hours announcement bar — hidden during open hours, shown only when closed -->
-    <div
-      id="statusBar"
-      class="statusbar statusbar--closed"
-      hidden
-      role="status"
-      aria-live="polite"
-    >
-      <span class="statusbar__dot"></span>
-      <span id="statusText" class="statusbar__text"
-        >Yes, we are closed! But we'd be back by (9:00 AM).</span
-      >
-      <span id="statusHours" class="statusbar__hours"></span>
-    </div>
+  <!-- Closed-hours announcement bar — hidden during open hours, shown only when closed -->
+  <div id="statusBar" class="statusbar statusbar--closed" hidden role="status" aria-live="polite">
+    <span class="statusbar__dot"></span>
+    <span id="statusText" class="statusbar__text">Yes, we are closed! But we'd be back by opening time (9:00 AM).</span>
+    <span id="statusHours" class="statusbar__hours"></span>
+  </div>
 
-    <!-- Header -->
-    <header class="nav" id="home">
-      <div class="nav__inner container">
-        <a href="index.html" class="nav__brand" aria-label="Cyril's Foods home">
-          <img
-            src="assets/logo.png"
-            alt="Cyril's Foods logo"
-            class="nav__logo"
-          />
-          <span class="nav__wordmark">Cyril's <em>Foods</em></span>
+  <!-- Header -->
+  <header class="nav" id="home">
+    <div class="nav__inner container">
+      <a href="index.html" class="nav__brand" aria-label="Cyril's Foods home">
+        <img src="assets/logo.png" alt="Cyril's Foods logo" class="nav__logo" />
+        <span class="nav__wordmark">Cyril's <em>Foods</em></span>
+      </a>
+      <nav class="nav__links" id="navLinks" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="menu.html">Menu</a>
+        <a href="index.html#delivery">Delivery</a>
+        <a href="index.html#about">About</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <div class="nav__actions">
+        <a class="btn btn--whatsapp nav__wa" href="https://wa.me/2348081988184?text=Hello%20Cyril's%20Foods!%20I%20want%20to%20place%20an%20order." target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.512 5.26l-.999 3.648 3.976-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          <span>WhatsApp</span>
         </a>
-        <nav class="nav__links" id="navLinks" aria-label="Primary">
-          <a href="index.html">Home</a>
-          <a href="menu.html">Menu</a>
-          <a href="index.html#delivery">Delivery</a>
-          <a href="index.html#about">About</a>
-          <a href="#contact">Contact</a>
-        </nav>
-        <div class="nav__actions">
-          <a
-            class="btn btn--whatsapp nav__wa"
-            href="https://wa.me/2348081988184?text=Hello%20Cyril's%20Foods!%20I%20want%20to%20place%20an%20order."
-            target="_blank"
-            rel="noopener"
-          >
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path
-                d="M.057 24l1.687-6.163a11.867 11.867 0 01-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 018.413 3.488 11.824 11.824 0 013.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 01-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884a9.86 9.86 0 001.512 5.26l-.999 3.648 3.976-1.607zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"
-              />
-            </svg>
-            <span>WhatsApp</span>
-          </a>
-          <button class="cart-btn" id="cartBtn" aria-label="Open cart">
-            <svg
-              viewBox="0 0 24 24"
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path
-                d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
-              />
-            </svg>
-            <span class="cart-btn__label">Cart</span>
-            <span class="cart-btn__count" id="cartCount">0</span>
-          </button>
-          <button
-            class="nav__burger"
-            id="navBurger"
-            aria-label="Menu"
-            aria-expanded="false"
-            aria-controls="navLinks"
-          >
-            <span></span><span></span><span></span>
-          </button>
-        </div>
+        <button class="cart-btn" id="cartBtn" aria-label="Open cart">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="cart-btn__label">Cart</span>
+          <span class="cart-btn__count" id="cartCount">0</span>
+        </button>
+        <button class="nav__burger" id="navBurger" aria-label="Menu" aria-expanded="false" aria-controls="navLinks">
+          <span></span><span></span><span></span>
+        </button>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero__bg"></div>
-      <div class="container hero__grid">
-        <div class="hero__content">
-          <h1 class="hero__title">
-            Smokey Party Jollof <br />
-            <span class="accent">Delivered Hot.</span>
-          </h1>
-          <p class="hero__sub">
-            Delivered hot to your door. From
-            <strong>smoky party jollof</strong> to silky
-            <strong>swallow</strong>, peppered protein and fresh-pressed drinks
-            — generous plates made fresh every day.
-          </p>
-          <div class="hero__cta">
-            <a href="menu.html" class="btn btn--primary btn--lg">
-              Order Now
-              <svg
-                viewBox="0 0 24 24"
-                width="20"
-                height="20"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            </a>
-            <a
-              href="https://wa.me/2348053540206?text=Hello%20Cyril's%20Foods!%20I'd%20like%20to%20place%20a%20bulk%20order."
-              target="_blank"
-              rel="noopener"
-              class="btn btn--ghost btn--lg"
-              >Bulk Orders · 0805 354 0206</a
-            >
-          </div>
-          <div class="hero__stats">
-            <div>
-              <strong data-stat="140">0</strong><span>Menu dishes</span>
-            </div>
-            <div><strong>9AM–7PM</strong><span>Daily service</span></div>
-            <div><strong>₦1,100</strong><span>Per delivery km</span></div>
-          </div>
-        </div>
-
-        <div class="hero__visual">
-          <div class="hero__card hero__card--main">
-            <img
-              src="assets/hero-jollof.jpg"
-              alt="Smoky Nigerian party jollof rice with grilled chicken and fried plantain"
-            />
-            <div class="hero__card-tag">🔥 Smokey Party Jollof</div>
-          </div>
-          <div class="hero__card hero__card--sub hero__card--a">
-            <img
-              src="assets/hero-grill.jpg"
-              alt="Peppered grilled chicken and fish platter"
-            />
-          </div>
-          <div class="hero__card hero__card--sub hero__card--b">
-            <img
-              src="assets/hero-swallow.jpg"
-              alt="Pounded yam and eba swallow served with egusi soup"
-            />
-          </div>
-          <div class="hero__badge">
-            <span class="hero__badge-emoji">🍗</span>
-            <div>
-              <strong>Loaded plates</strong
-              ><small>Generous portions, always</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="marquee" aria-hidden="true">
-        <div class="marquee__track">
-          <span>🍛 Party Jollof</span><span>🥘 Pounded Yam &amp; Egusi</span
-          ><span>🍗 Grilled Chicken</span><span>🥤 Fresh Glow Drink</span
-          ><span>🥟 Meat Pie</span><span>🍨 Premium Ice Cream</span
-          ><span>📦 Bulk Orders Welcome</span> <span>🍛 Party Jollof</span
-          ><span>🥘 Pounded Yam &amp; Egusi</span><span>🍗 Grilled Chicken</span
-          ><span>🥤 Fresh Glow Drink</span><span>🥟 Meat Pie</span
-          ><span>🍨 Premium Ice Cream</span><span>📦 Bulk Orders Welcome</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Category strip -->
-    <section class="cats container reveal" id="categories">
-      <div class="section-head">
-        <span class="section-head__kick">Explore</span>
-        <h2 class="section-head__title">What are you <span>craving?</span></h2>
-      </div>
-      <div class="skew-cats" id="catsCarousel">
-        <div class="skew-cats__viewport">
-          <div class="skew-cats__tilt">
-            <div class="skew-track" id="catRail"></div>
-          </div>
-        </div>
-        <div class="skew-cats__hint">← scroll the cravings →</div>
-      </div>
-    </section>
-
-    <!-- Featured (homepage: only top meals, capped at 12) -->
-    <section class="menu section" id="featured">
-      <div class="container">
-        <div class="section-head section-head--center">
-          <span class="section-head__kick">Most Loved</span>
-          <h2 class="section-head__title">
-            Cyril's <span>Signature Plates</span>
-          </h2>
-          <p class="section-head__sub">
-            Our most-ordered meals, made fresh daily. Tap a dish to customise
-            protein &amp; extras.
-          </p>
-        </div>
-        <div class="menu__grid" id="featuredGrid"></div>
-        <p class="menu__empty" hidden>No dishes found.</p>
-        <div class="featured__cta reveal">
-          <p>
-            Hungry for more? Explore the full range — rice, swallow, soups,
-            protein, drinks &amp; treats.
-          </p>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__bg"></div>
+    <div class="container hero__grid">
+      <div class="hero__content">
+        <span class="hero__eyebrow"><span class="pulse-dot"></span> Kitchen open daily · 9 AM – 7 PM</span>
+        <h1 class="hero__title">
+          Smokey Party Jollof <br />&amp; <span class="accent">Authentic Nigerian Flavors</span> Delivered Hot.
+        </h1>
+        <p class="hero__sub">Delivered hot to your door. From <strong>smoky party jollof</strong> to silky <strong>swallow</strong>, peppered protein and fresh-pressed drinks — generous plates made fresh every day.</p>
+        <div class="hero__cta">
           <a href="menu.html" class="btn btn--primary btn--lg">
-            View Full Menu
-            <svg
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+            Order Now
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
+          <a href="https://wa.me/2348053540206?text=Hello%20Cyril's%20Foods!%20I'd%20like%20to%20place%20a%20bulk%20order." target="_blank" rel="noopener" class="btn btn--ghost btn--lg">Bulk Orders · 0805 354 0206</a>
+        </div>
+        <div class="hero__stats">
+          <div><strong data-stat="140">0</strong><span>Menu dishes</span></div>
+          <div><strong>9AM–7PM</strong><span>Daily service</span></div>
+          <div><strong>₦1,100</strong><span>Per delivery km</span></div>
         </div>
       </div>
-    </section>
 
-    <!-- Delivery / distance engine -->
-    <section class="delivery section section--tint reveal" id="delivery">
-      <div class="container delivery__grid">
-        <div class="delivery__info">
-          <span class="section-head__kick">Honest Pricing</span>
-          <h2 class="section-head__title">
-            Delivery fee measured <span>door-to-door</span>
-          </h2>
-          <p class="delivery__lead">
-            No flat-rate guesswork. We calculate the real driving distance from
-            our kitchen to your drop-off and charge a flat
-            <strong>₦1,100 per kilometre</strong>. You always see the fee before
-            you pay.
-          </p>
-          <ul class="delivery__points">
-            <li>
-              <span>🗺️</span>
-              <div>
-                <strong>Live route distance</strong
-                ><small
-                  >Google Maps / OpenStreetMap routing — never hardcoded.</small
-                >
-              </div>
-            </li>
-            <li>
-              <span>⚖️</span>
-              <div>
-                <strong>Transparent fee</strong
-                ><small>Distance (km) × ₦1,100, added at checkout.</small>
-              </div>
-            </li>
-            <li>
-              <span>📦</span>
-              <div>
-                <strong>Bulk &amp; events</strong
-                ><small
-                  >Call 0805 354 0206 for party trays &amp; large orders.</small
-                >
-              </div>
-            </li>
-            <li>
-              <span>💳</span>
-              <div>
-                <strong>Secure payment</strong
-                ><small>Paystack card &amp; instant bank transfer.</small>
-              </div>
-            </li>
-          </ul>
+      <div class="hero__visual">
+        <div class="hero__card hero__card--main">
+          <img src="assets/hero-jollof.jpg" alt="Smoky Nigerian party jollof rice with grilled chicken and fried plantain" />
+          <div class="hero__card-tag">🔥 Smokey Party Jollof</div>
         </div>
-        <div class="delivery__calc card">
-          <h3>Estimate my delivery</h3>
-          <label for="calcAddress">Your delivery address</label>
-          <div class="autocomplete">
-            <input
-              type="text"
-              id="calcAddress"
-              placeholder="Start typing your address or landmark…"
-              autocomplete="off"
-              aria-label="Delivery address"
-            />
-            <ul
-              class="autocomplete__list"
-              id="calcSuggestions"
-              role="listbox"
-            ></ul>
-          </div>
-          <div
-            class="saved-addr-wrap"
-            id="calcSaved"
-            style="display: none"
-          ></div>
-          <div class="delivery__result" id="calcResult">
-            <div class="delivery__row">
-              <span>Cyril's Kitchen → You</span
-              ><strong id="calcDistance">— km</strong>
-            </div>
-            <div class="delivery__row delivery__row--fee">
-              <span>Delivery fee</span><strong id="calcFee">₦0</strong>
-            </div>
-            <p class="delivery__note" id="calcNote">
-              Enter an address to get your exact fee.
-            </p>
-          </div>
-          <a href="#" class="delivery__info-link" id="deliveryInfoLink"
-            >Want to know how your delivery is calculated?</a
-          >
-          <a
-            href="menu.html"
-            class="btn btn--primary"
-            style="width: 100%; justify-content: center; margin-top: 0.8rem"
-            >Build my order</a
-          >
+        <div class="hero__card hero__card--sub hero__card--a">
+          <img src="assets/hero-grill.jpg" alt="Peppered grilled chicken and fish platter" />
+        </div>
+        <div class="hero__card hero__card--sub hero__card--b">
+          <img src="assets/hero-swallow.jpg" alt="Pounded yam and eba swallow served with egusi soup" />
+        </div>
+        <div class="hero__badge">
+          <span class="hero__badge-emoji">🍗</span>
+          <div><strong>Loaded plates</strong><small>Generous portions, always</small></div>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- About -->
-    <section class="about section reveal" id="about">
-      <div class="container about__grid">
-        <div class="about__gallery">
-          <img
-            class="about__img about__img--1"
-            src="assets/brand-event.jpg"
-            alt="Cyril's Foods branded event banner with jollof, plantain and spaghetti"
-            loading="lazy"
-          />
-          <img
-            class="about__img about__img--2"
-            src="assets/brand-bulk.jpg"
-            alt="Cyril's Foods team member handing over a bulk order"
-            loading="lazy"
-          />
-          <img
-            class="about__img about__img--3"
-            src="assets/brand-drinks.jpg"
-            alt="Cyril's Foods fresh pressed drinks"
-            loading="lazy"
-          />
-        </div>
-        <div class="about__content">
-          <span class="section-head__kick">Our Story</span>
-          <h2 class="section-head__title">
-            Homemade magic, <span>served hot</span>
-          </h2>
-          <p>
-            At <strong>Cyril's Foods</strong>, we're passionate about
-            unforgettable food experiences — quality with satisfying quantity,
-            in a warm, welcoming atmosphere. From smoky party jollof to silky
-            pounded yam and our famous fresh-pressed <em>Glow Drink</em>, every
-            plate leaves the kitchen made fresh.
-          </p>
-          <p>
-            We feed everyday cravings, family gatherings and big celebrations
-            across Lagos — with delivery priced honestly by distance.
-          </p>
-          <div class="about__features">
-            <div class="feature">
-              <span>👨‍🍳</span><strong>Fresh daily</strong
-              ><small>Cooked in small batches</small>
-            </div>
-            <div class="feature">
-              <span>🌶️</span><strong>Boldly spiced</strong
-              ><small>Authentic Nigerian flavour</small>
-            </div>
-            <div class="feature">
-              <span>🛵</span><strong>Fast delivery</strong
-              ><small>Straight from our kitchen</small>
-            </div>
-            <div class="feature">
-              <span>💚</span><strong>Generous plates</strong
-              ><small>Loaded, every time</small>
-            </div>
-          </div>
-          <a
-            href="https://wa.me/2348081988184?text=Hello%20Cyril's%20Foods!%20Tell%20me%20more%20about%20your%20food."
-            target="_blank"
-            rel="noopener"
-            class="btn btn--primary"
-            >Chat with us</a
-          >
-        </div>
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>🍛 Party Jollof</span><span>🥘 Pounded Yam &amp; Egusi</span><span>🍗 Grilled Chicken</span><span>🥤 Fresh Glow Drink</span><span>🥟 Meat Pie</span><span>🍨 Premium Ice Cream</span><span>📦 Bulk Orders Welcome</span>
+        <span>🍛 Party Jollof</span><span>🥘 Pounded Yam &amp; Egusi</span><span>🍗 Grilled Chicken</span><span>🥤 Fresh Glow Drink</span><span>🥟 Meat Pie</span><span>🍨 Premium Ice Cream</span><span>📦 Bulk Orders Welcome</span>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer class="footer reveal reveal--footer" id="contact">
-      <div class="container footer__grid">
-        <div class="footer__brand">
-          <img src="assets/logo.png" alt="Cyril's Foods logo" />
-          <h3>Cyril's <em>Foods</em></h3>
-          <p>
-            Best Food In Town. Party jollof, swallow, soups, protein, pastries
-            &amp; fresh drinks — delivered hot across Lagos.
-          </p>
-          <a
-            class="footer__address"
-            href="https://www.google.com/maps/search/?api=1&query=26+College+Rd,+Ifako-Ijaiye,+Lagos,+Nigeria"
-            target="_blank"
-            rel="noopener"
-          >
-            <span>📍</span> 26 College Rd, Ifako-Ijaiye, Lagos, Nigeria
-          </a>
-          <div class="footer__social">
-            <a
-              href="https://www.facebook.com/Cyrilsfoods"
-              target="_blank"
-              rel="noopener"
-              aria-label="Facebook"
-              ><svg
-                viewBox="0 0 24 24"
-                width="17"
-                height="17"
-                fill="currentColor"
-              >
-                <path
-                  d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.5-3.9 3.78-3.9 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"
-                /></svg
-            ></a>
-            <a
-              href="https://instagram.com/Cyrilsfoods"
-              target="_blank"
-              rel="noopener"
-              aria-label="Instagram"
-              ><svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="currentColor"
-              >
-                <path
-                  d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 3.68A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm6.4-10.4a1.44 1.44 0 11-1.44-1.44 1.44 1.44 0 011.44 1.44z"
-                /></svg
-            ></a>
-            <a
-              href="https://twitter.com/Cyrilsfoods"
-              target="_blank"
-              rel="noopener"
-              aria-label="X / Twitter"
-              ><svg
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="currentColor"
-              >
-                <path
-                  d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.6l5.24 6.93 6.06-6.93zm-1.29 19.5h2.04L6.49 3.24H4.3l13.31 17.41z"
-                /></svg
-            ></a>
-          </div>
-        </div>
-        <div class="footer__col">
-          <h4>Order &amp; Enquiries</h4>
-          <a class="foot-contact" href="tel:+2348081988184"
-            ><svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"
-              /></svg
-            ><span>Call to order<br /><strong>0808 198 8184</strong></span></a
-          >
-          <a class="foot-contact" href="tel:+2348053540206"
-            ><svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path
-                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-              /></svg
-            ><span>Bulk orders<br /><strong>0805 354 0206</strong></span></a
-          >
-          <a class="foot-contact" href="mailto:cyrilsfood@gmail.com"
-            ><svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="m22 7-10 6L2 7" /></svg
-            ><span><strong>cyrilsfood@gmail.com</strong></span></a
-          >
-        </div>
-        <div class="footer__col">
-          <h4>Opening Hours</h4>
-          <p class="footer__hours">
-            <span>Monday – Sunday</span
-            ><strong id="footerHours">9:00 AM – 7:00 PM</strong>
-          </p>
-          <p class="footer__hours-note">
-            Orders close automatically at 7 PM and reopen at 9 AM WAT.
-          </p>
-          <a href="menu.html" class="footer__cta"
-            >Order Now
-            <svg
-              viewBox="0 0 24 24"
-              width="17"
-              height="17"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7" /></svg
-          ></a>
+  <!-- Category strip -->
+  <section class="cats container reveal" id="categories">
+    <div class="section-head">
+      <span class="section-head__kick">Explore</span>
+      <h2 class="section-head__title">What are you <span>craving?</span></h2>
+    </div>
+    <div class="skew-cats" id="catsCarousel">
+      <div class="skew-cats__viewport">
+        <div class="skew-cats__tilt">
+          <div class="skew-track" id="catRail"></div>
         </div>
       </div>
-      <div class="footer__bar">
-        <div class="container">
-          <p>
-            © <span id="year"></span> Cyril's Foods. All rights reserved. ·
-            Lagos, Nigeria
-          </p>
-          <nav class="footer__legal" aria-label="Legal">
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms &amp; Conditions</a>
-          </nav>
-        </div>
-      </div>
-    </footer>
+      <div class="skew-cats__hint">← scroll the cravings →</div>
+    </div>
+  </section>
 
-    <script src="catalog.js"></script>
-    <script src="app.js"></script>
-  </body>
+  <!-- Featured (homepage: only top meals, capped at 12) -->
+  <section class="menu section" id="featured">
+    <div class="container">
+      <div class="section-head section-head--center">
+        <span class="section-head__kick">Most Loved</span>
+        <h2 class="section-head__title">Cyril's <span>Signature Plates</span></h2>
+        <p class="section-head__sub">Our most-ordered meals, made fresh daily. Tap a dish to customise protein &amp; extras.</p>
+      </div>
+      <div class="menu__grid" id="featuredGrid"></div>
+      <p class="menu__empty" hidden>No dishes found.</p>
+      <div class="featured__cta reveal">
+        <p>Hungry for more? Explore the full range — rice, swallow, soups, protein, drinks &amp; treats.</p>
+        <a href="menu.html" class="btn btn--primary btn--lg">
+          View Full Menu
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Delivery / distance engine -->
+  <section class="delivery section section--tint reveal" id="delivery">
+    <div class="container delivery__grid">
+      <div class="delivery__info">
+        <span class="section-head__kick">Honest Pricing</span>
+        <h2 class="section-head__title">Delivery fee measured <span>door-to-door</span></h2>
+        <p class="delivery__lead">No flat-rate guesswork. We calculate the real driving distance from our kitchen to your drop-off and charge a flat <strong>₦1,100 per kilometre</strong>. You always see the fee before you pay.</p>
+        <ul class="delivery__points">
+          <li><span>🗺️</span><div><strong>Live route distance</strong><small>Google Maps / OpenStreetMap routing — never hardcoded.</small></div></li>
+          <li><span>⚖️</span><div><strong>Transparent fee</strong><small>Distance (km) × ₦1,100, added at checkout.</small></div></li>
+          <li><span>📦</span><div><strong>Bulk &amp; events</strong><small>Call 0805 354 0206 for party trays &amp; large orders.</small></div></li>
+          <li><span>💳</span><div><strong>Secure payment</strong><small>Paystack card &amp; instant bank transfer.</small></div></li>
+        </ul>
+      </div>
+      <div class="delivery__calc card">
+        <h3>Estimate my delivery</h3>
+        <label for="calcAddress">Your delivery address</label>
+        <div class="autocomplete">
+          <input type="text" id="calcAddress" placeholder="Start typing your address or landmark…" autocomplete="off" aria-label="Delivery address" />
+          <ul class="autocomplete__list" id="calcSuggestions" role="listbox"></ul>
+        </div>
+        <div class="saved-addr-wrap" id="calcSaved" style="display:none"></div>
+        <div class="delivery__result" id="calcResult">
+          <div class="delivery__row"><span>Cyril's Kitchen → You</span><strong id="calcDistance">— km</strong></div>
+          <div class="delivery__row delivery__row--fee"><span>Delivery fee</span><strong id="calcFee">₦0</strong></div>
+          <p class="delivery__note" id="calcNote">Enter an address to get your exact fee.</p>
+        </div>
+        <a href="#" class="delivery__info-link" id="deliveryInfoLink">Want to know how your delivery is calculated?</a>
+        <a href="menu.html" class="btn btn--primary" style="width:100%;justify-content:center;margin-top:.8rem">Build my order</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section class="about section reveal" id="about">
+    <div class="container about__grid">
+      <div class="about__gallery">
+        <img class="about__img about__img--1" src="assets/brand-event.jpg" alt="Cyril's Foods branded event banner with jollof, plantain and spaghetti" loading="lazy" />
+        <img class="about__img about__img--2" src="assets/brand-bulk.jpg" alt="Cyril's Foods team member handing over a bulk order" loading="lazy" />
+        <img class="about__img about__img--3" src="assets/brand-drinks.jpg" alt="Cyril's Foods fresh pressed drinks" loading="lazy" />
+      </div>
+      <div class="about__content">
+        <span class="section-head__kick">Our Story</span>
+        <h2 class="section-head__title">Homemade magic, <span>served hot</span></h2>
+        <p>At <strong>Cyril's Foods</strong>, we're passionate about unforgettable food experiences — quality with satisfying quantity, in a warm, welcoming atmosphere. From smoky party jollof to silky pounded yam and our famous fresh-pressed <em>Glow Drink</em>, every plate leaves the kitchen made fresh.</p>
+        <p>We feed everyday cravings, family gatherings and big celebrations across Lagos — with delivery priced honestly by distance.</p>
+        <div class="about__features">
+          <div class="feature"><span>👨‍🍳</span><strong>Fresh daily</strong><small>Cooked in small batches</small></div>
+          <div class="feature"><span>🌶️</span><strong>Boldly spiced</strong><small>Authentic Nigerian flavour</small></div>
+          <div class="feature"><span>🛵</span><strong>Fast delivery</strong><small>Straight from our kitchen</small></div>
+          <div class="feature"><span>💚</span><strong>Generous plates</strong><small>Loaded, every time</small></div>
+        </div>
+        <a href="https://wa.me/2348081988184?text=Hello%20Cyril's%20Foods!%20Tell%20me%20more%20about%20your%20food." target="_blank" rel="noopener" class="btn btn--primary">Chat with us</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer reveal reveal--footer" id="contact">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <img src="assets/logo.png" alt="Cyril's Foods logo" />
+        <h3>Cyril's <em>Foods</em></h3>
+        <p>Best Food In Town. Party jollof, swallow, soups, protein, pastries &amp; fresh drinks — delivered hot across Lagos.</p>
+        <a class="footer__address" href="https://www.google.com/maps/search/?api=1&query=26+College+Rd,+Ifako-Ijaiye,+Lagos,+Nigeria" target="_blank" rel="noopener">
+          <span>📍</span> 26 College Rd, Ifako-Ijaiye, Lagos, Nigeria
+        </a>
+        <div class="footer__social">
+          <a href="https://www.facebook.com/Cyrilsfoods" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.5-3.9 3.78-3.9 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12z"/></svg></a>
+          <a href="https://instagram.com/Cyrilsfoods" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.7 3.7 0 01-1.38-.9 3.7 3.7 0 01-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 3.68A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zm0 10.16A4 4 0 1116 12a4 4 0 01-4 4zm6.4-10.4a1.44 1.44 0 11-1.44-1.44 1.44 1.44 0 011.44 1.44z"/></svg></a>
+          <a href="https://twitter.com/Cyrilsfoods" target="_blank" rel="noopener" aria-label="X / Twitter"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.41l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.6l5.24 6.93 6.06-6.93zm-1.29 19.5h2.04L6.49 3.24H4.3l13.31 17.41z"/></svg></a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h4>Order &amp; Enquiries</h4>
+        <a class="foot-contact" href="tel:+2348081988184"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>Call to order<br /><strong>0808 198 8184</strong></span></a>
+        <a class="foot-contact" href="tel:+2348053540206"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><span>Bulk orders<br /><strong>0805 354 0206</strong></span></a>
+        <a class="foot-contact" href="mailto:cyrilsfood@gmail.com"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg><span><strong>cyrilsfood@gmail.com</strong></span></a>
+      </div>
+      <div class="footer__col">
+        <h4>Opening Hours</h4>
+        <p class="footer__hours"><span>Monday – Sunday</span><strong id="footerHours">9:00 AM – 7:00 PM</strong></p>
+        <p class="footer__hours-note">Orders close automatically at 7 PM and reopen at 9 AM WAT.</p>
+        <a href="menu.html" class="footer__cta">Order Now
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+      </div>
+    </div>
+    <div class="footer__bar">
+      <div class="container">
+        <p>© <span id="year"></span> Cyril's Foods. All rights reserved. · Lagos, Nigeria</p>
+        <nav class="footer__legal" aria-label="Legal">
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms &amp; Conditions</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="catalog.js"></script>
+  <script src="app.js"></script>
+</body>
 </html>

@@ -7,7 +7,10 @@
   "use strict";
 
   var TOKEN_KEY = "cyrils_kitchen_token";
-  var api = function (path) { return path; };
+  // Backend origin — provided by config.js on the page. Same-origin ("") when
+  // served by the Node backend; the Render URL when this page is on Netlify.
+  var API_BASE = window.CYRIL_API_BASE || "";
+  var api = function (path) { return API_BASE + path; };
   var token = localStorage.getItem(TOKEN_KEY) || null;
 
   var els = {};
@@ -50,7 +53,7 @@
   async function requestMagicLink(email) {
     var res;
     try {
-      res = await fetch("/api/kitchen/magic-request", {
+      res = await fetch(api("/api/kitchen/magic-request"), {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({ email: email })
@@ -167,7 +170,7 @@
   }
   function connect() {
     if (state.evt) try { state.evt.close(); } catch (e) {}
-    var url = "/api/kitchen/stream?token=" + encodeURIComponent(token);
+    var url = api("/api/kitchen/stream?token=" + encodeURIComponent(token));
     var evt = new EventSource(url);
     state.evt = evt;
     evt.onopen = function () { setLive("is-live", "Live — listening for orders"); };
@@ -180,7 +183,7 @@
       // We proactively verify with a fetch after a moment.
     };
     // Backstop: confirm token is still valid; on 401 drop to PIN gate.
-    fetch("/api/kitchen/orders", { headers: { Authorization: "Bearer " + token } })
+    fetch(api("/api/kitchen/orders"), { headers: { Authorization: "Bearer " + token } })
       .then(function (r) {
         if (r.status === 401 || r.status === 403) { logout(); return; }
         return r.json();
@@ -193,7 +196,7 @@
 
   /* ---------- Status controls (closed / sold out) ---------- */
   async function postControl(body) {
-    var res = await fetch("/api/kitchen/control", {
+    var res = await fetch(api("/api/kitchen/control"), {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
       body: JSON.stringify(body)
     });
@@ -230,7 +233,7 @@
     $("pinGate").style.display = "none";
     $("dash").hidden = false; $("dash").classList.add("is-auth");
     // Load current overrides then connect live.
-    fetch("/api/status").then(function (r) { return r.json(); }).then(function (s) {
+    fetch(api("/api/status")).then(function (r) { return r.json(); }).then(function (s) {
       state.status = { manualClosed: !!s.manualClosed, outOfStock: s.outOfStock || [] };
       syncControls();
     }).catch(function () {});
@@ -244,7 +247,7 @@
     if (!token) { $("pinGate").style.display = "grid"; return; }
     // Validate the stored/arrived token against the server.
     try {
-      var r = await fetch("/api/kitchen/orders", { headers: { Authorization: "Bearer " + token } });
+      var r = await fetch(api("/api/kitchen/orders"), { headers: { Authorization: "Bearer " + token } });
       if (r.status === 401 || r.status === 403) { logout(); return; }
       showDashboard();
     } catch (e) {

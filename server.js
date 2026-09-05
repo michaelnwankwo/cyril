@@ -227,6 +227,13 @@ function publicBaseUrl(req) {
   return process.env.PUBLIC_URL ||
     (req && req.protocol && req.get ? req.protocol + "://" + req.get("host") : "http://localhost:3000");
 }
+// Where the customer-facing site lives. When the static site is hosted separately
+// (e.g. Netlify) and the API on Render, magic-link redirects must land on the
+// FRONTEND so the 24h token is stored under the site origin. Same-origin deploys
+// can leave this unset (falls back to the backend origin).
+function frontendBaseUrl(req) {
+  return process.env.FRONTEND_URL || publicBaseUrl(req);
+}
 // Best-effort email delivery. Configure one provider; otherwise the link is
 // printed to the server console (fine for local/dev / VPS logs).
 function sendStaffEmail(to, link) {
@@ -291,11 +298,11 @@ app.get("/api/kitchen/magic-verify", function (req, res) {
   const rec = magicCodes.get(code);
   if (!rec || rec.exp < Date.now()) {
     magicCodes.delete(code);
-    return res.redirect("/kitchen.html?auth=denied");
+    return res.redirect(frontendBaseUrl(req) + "/kitchen.html?auth=denied");
   }
   magicCodes.delete(code); // single use
   const token = signToken({ role: "kitchen", email: rec.email, exp: Date.now() + SESSION_TTL_MS });
-  res.redirect("/kitchen.html#authed=" + encodeURIComponent(token));
+  res.redirect(frontendBaseUrl(req) + "/kitchen.html#authed=" + encodeURIComponent(token));
 });
 
 /* Authenticated kitchen endpoints */
