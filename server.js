@@ -91,13 +91,16 @@ const MAGIC_TTL_SEC = 600; // 10 minutes
 const MAGIC_TTL_MS = MAGIC_TTL_SEC * 1000;
 // Authorized staff inbox(es). Comma-separate in KITCHEN_EMAILS to add more.
 const KITCHEN_EMAILS = (
-  process.env.KITCHEN_EMAILS || "kitchen@cyrilfoods.com.ng"
+  process.env.KITCHEN_EMAILS ||
+  "kitchen@cyrilfoods.com.ng,michaelnwankwo186@gmail.com"
 )
   .split(",")
   .map(function (s) {
     return s.trim().toLowerCase();
   })
   .filter(Boolean);
+// 👉 To add/remove staff emails, edit the KITCHEN_EMAILS value in render.yaml
+//    (comma-separated) and push — Render auto-deploys with the new list.
 // Single-use magic codes, keyed by token: { email, exp }
 const magicCodes = new Map();
 
