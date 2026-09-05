@@ -3,7 +3,7 @@
 # 1. Push this repo to GitHub.
 # 2. Render Dashboard → New → Blueprint → pick the repo.
 # 3. Fill the secret env vars in the dashboard (see DEPLOY.md).
-# 4. After first deploy, copy the service URL (e.g. https://cyrils-foods.onrender.com)
+# 4. After first deploy, copy the service URL (e.g. https://cyril-ab8l.onrender.com)
 #    into config.js (API_BASE) and redeploy Netlify / push the change.
 services:
   - type: web
@@ -20,28 +20,23 @@ services:
         value: production
       # Public base URL of THIS backend (Render service URL). Used to build links.
       - key: PUBLIC_URL
-        value: https://cyrils-foods.onrender.com
+        value: https://cyril-ab8l.onrender.com
       # The customer-facing static site (Netlify). Magic links redirect here.
       - key: FRONTEND_URL
         value: https://cyrilfoods.netlify.app
       # Origins allowed to call the API. Netlify + custom domain.
       - key: CORS_ORIGIN
         value: https://cyrilfoods.netlify.app,https://cyrilsfood.com.ng,https://www.cyrilsfood.com.ng
-      # Staff authorized emails (comma-separated, case-insensitive).
-      - key: KITCHEN_EMAILS
-        value: kitchen@cyrilfoods.com.ng,michaelnwankwo186@gmail.com
+      # Kitchen access PIN — the 4-digit code staff enter to open the dashboard.
+      # Change this to your own 4 digits and push (or edit in the dashboard).
+      - key: KITCHEN_PIN
+        value: "8818"
       # --- Secret values: set these in the Render dashboard (Sync: Off) ---
       - key: TOKEN_SECRET
         sync: false          # long random string, e.g. `openssl rand -hex 32`
       - key: PAYSTACK_SECRET_KEY
         sync: false          # sk_live_... (or sk_test_... while testing)
       - key: PAYSTACK_PUBLIC_KEY
-        sync: false
-      # Email delivery for magic links (Resend/Brevo/Mailgun webhook).
-      # Without this, links are printed to the Render logs (usable for testing).
-      - key: EMAIL_WEBHOOK_URL
-        sync: false
-      - key: EMAIL_WEBHOOK_KEY
         sync: false
       # WhatsApp order alerts (optional — wa.me fallback always works).
       - key: WHATSAPP_ALERT_TO

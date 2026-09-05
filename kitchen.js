@@ -49,14 +49,14 @@
   }
   function stopChime() { if (chimeTimer) { clearInterval(chimeTimer); chimeTimer = null; } }
 
-  /* ---------- Auth (passwordless magic link, 24-hour session) ---------- */
-  async function requestMagicLink(email) {
+  /* ---------- Auth (4-digit PIN → server-signed 24-hour token) ---------- */
+  async function pinLogin(pin) {
     var res;
     try {
-      res = await fetch(api("/api/kitchen/magic-request"), {
+      res = await fetch(api("/api/kitchen/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        body: JSON.stringify({ email: email })
+        body: JSON.stringify({ pin: pin })
       });
     } catch (e) {
       throw new Error("Couldn't reach the login service. Check your connection and try again.");
@@ -66,14 +66,14 @@
       throw new Error("The kitchen service isn't running here. Open this page from the correct server address.");
     }
     var data = await res.json().catch(function () { return {}; });
-    if (!res.ok) throw new Error(data.message || "Request failed. Please try again.");
+    if (!res.ok) throw new Error(data.message || "Login failed. Please try again.");
     return data;
   }
   function storeToken(t) {
     token = t;
     try { localStorage.setItem(TOKEN_KEY, token); } catch (e) {}
   }
-  // Pull a session token off the magic-link redirect hash (#authed=...), validate it.
+  // Pull a session token off a redirect hash (#authed=...) if present.
   function consumeHashToken() {
     var h = (location.hash || "").replace(/^#/, "");
     var m = h.match(/(?:^|&)authed=([^&]+)/);
@@ -90,8 +90,8 @@
     stopChime();
     $("dash").hidden = true; $("dash").classList.remove("is-auth");
     $("pinGate").style.display = "grid";
-    var em = $("magicEmail"); if (em) em.value = "";
-    var note = $("magicNote"); if (note) note.hidden = true;
+    var pi = $("pinInput"); if (pi) { pi.value = ""; pi.focus(); }
+    var note = $("pinNote"); if (note) note.hidden = true;
   }
 
   /* ---------- Data helpers ---------- */
@@ -241,11 +241,10 @@
   }
 
   async function tryEnter() {
-    var note = $("magicNote");
-    // Arriving from an email link carries the fresh 24h token in the hash.
+    // Use any token already on this device (from a previous 24h session).
     consumeHashToken();
-    if (!token) { $("pinGate").style.display = "grid"; return; }
-    // Validate the stored/arrived token against the server.
+    if (!token) { $("pinGate").style.display = "grid"; var pi = $("pinInput"); if (pi) pi.focus(); return; }
+    // Validate the stored token against the server.
     try {
       var r = await fetch(api("/api/kitchen/orders"), { headers: { Authorization: "Bearer " + token } });
       if (r.status === 401 || r.status === 403) { logout(); return; }
@@ -254,34 +253,36 @@
       // Offline / blip: still show the dashboard; SSE retries on its own.
       showDashboard();
     }
-    // Surface an explicit message if verification denied.
-    if (/auth=denied/.test(location.search) && note) { note.hidden = false; note.textContent = "That link was invalid or expired. Request a new one."; }
   }
 
   /* ---------- Events ---------- */
   function init() {
-    $("magicForm").addEventListener("submit", async function (e) {
+    $("pinForm").addEventListener("submit", async function (e) {
       e.preventDefault();
-      var email = ($("magicEmail").value || "").trim().toLowerCase();
-      var note = $("magicNote"), btn = $("magicSubmit");
-      note.hidden = true;
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        note.hidden = false; note.textContent = "Please enter a valid email address."; return;
+      var pin = ($("pinInput").value || "").trim();
+      var note = $("pinNote"), btn = $("pinSubmit");
+      note.hidden = true; note.classList.remove("is-ok");
+      if (!/^\d{4}$/.test(pin)) {
+        note.hidden = false; note.textContent = "Enter the 4-digit kitchen PIN."; return;
       }
-      btn.disabled = true; btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Sending…';
+      btn.disabled = true; btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Unlocking…';
       try {
-        var data = await requestMagicLink(email);
-        note.hidden = false; note.classList.add("is-ok");
-        if (data && data.devLink) {
-          try { console.log("DEV MAGIC LINK:", data.devLink); } catch (e) {}
-          note.textContent = "✓ Dev mode — sign-in link printed to the browser console.";
+        var data = await pinLogin(pin);
+        if (data && data.token) {
+          storeToken(data.token);
+          $("pinGate").style.display = "none";
+          showDashboard();
         } else {
-          note.textContent = "✓ Sign-in link sent! Check your inbox — it expires in 10 minutes.";
+          throw new Error("Login failed. Please try again.");
         }
       } catch (err) {
-        note.hidden = false; note.classList.remove("is-ok"); note.textContent = (err && err.message) || "Network error — try again.";
+        note.hidden = false;
+        note.textContent = (err && /401|Incorrect|passcode/i.test(err.message || ""))
+          ? "Incorrect PIN. Please try again."
+          : ((err && err.message) || "Network error — try again.");
+        $("pinInput").value = ""; $("pinInput").focus();
       } finally {
-        btn.disabled = false; btn.textContent = "Email me a sign-in link";
+        btn.disabled = false; btn.textContent = "Unlock kitchen";
       }
     });
 

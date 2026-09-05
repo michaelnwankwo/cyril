@@ -34,9 +34,6 @@
       if (isLocal) return loc.protocol + "//" + host + ":3000";
       return (loc.origin && loc.origin.indexOf("http") === 0) ? loc.origin : "";
     })(),
-    // Optional Supabase Auth for fully-static magic links (set both to enable).
-    supabaseUrl: window.CYRIL_SUPABASE_URL || "",
-    supabaseAnonKey: window.CYRIL_SUPABASE_ANON_KEY || "",
     paystackKey: window.CYRIL_PAYSTACK_PK || "pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     googleMapsKey: window.CYRIL_GOOGLE_MAPS_KEY || "",
     ratePerKm: BRAND.ratePerKm,
@@ -818,10 +815,11 @@
         '<form id="staffForm" class="staff-auth">' +
           '<span class="staff-auth__icon">🔐</span>' +
           '<h3 id="staffTitle">Staff Access</h3>' +
-          '<p class="staff-auth__sub">Enter your authorized staff email and we\'ll send a one-time sign-in link. The link expires in 10 minutes and keeps this device signed in for 24 hours.</p>' +
-          '<div class="field"><label for="staffEmail">Staff email</label>' +
-            '<input type="email" id="staffEmail" autocomplete="email" placeholder="kitchen@cyrilfoods.com.ng" required /></div>' +
-          '<button type="submit" class="btn btn--primary" id="staffSubmit" style="width:100%;justify-content:center">Email me a sign-in link</button>' +
+          '<p class="staff-auth__sub">Authorized staff only. Enter the 4-digit kitchen PIN to open the order dashboard. This device stays signed in for 24 hours.</p>' +
+          '<div class="field"><label for="staffPin">Kitchen PIN</label>' +
+            '<input type="password" id="staffPin" inputmode="numeric" pattern="[0-9]*" maxlength="4" ' +
+            'autocomplete="one-time-code" aria-label="Kitchen PIN" placeholder="••••" required style="text-align:center;font-size:1.6rem;letter-spacing:.5em" /></div>' +
+          '<button type="submit" class="btn btn--primary" id="staffSubmit" style="width:100%;justify-content:center">Unlock kitchen</button>' +
           '<p class="staff-auth__note" id="staffNote" hidden></p>' +
         '</form>' +
         '</div></div>' +
@@ -1010,7 +1008,7 @@
 
   /* ---------------- Secret kitchen entry: 3 quick taps on the logo ----------------
      Customers never see a link. Staff tap the header logo (or footer logo) three
-     times within 1.5s to open the hidden Staff Access (magic-link) modal. A normal
+     times within 1.5s to open the hidden Staff Access (4-digit PIN) modal. A normal
      single tap on the header logo still navigates home as usual. */
   function initSecretTap() {
     var taps = 0, timer = null;
@@ -1022,7 +1020,7 @@
         taps = 0; clearTimeout(timer);
         e.preventDefault(); e.stopPropagation();
         openModal("#staffModal");
-        var em = $("#staffEmail"); if (em) setTimeout(function () { em.focus(); }, 250);
+        var em = $("#staffPin"); if (em) setTimeout(function () { em.focus(); }, 250);
         return;
       }
       // Header logo is a home link: briefly hold its normal navigation so three
@@ -1043,9 +1041,10 @@
     }
   }
 
-  /* Staff magic-link request.
-     - If Supabase keys are configured (static hosting), use signInWithOtp directly.
-     - Otherwise POST to the Node backend, with clear success/error UI states. */
+  /* Staff kitchen access — 4-digit PIN.
+     POSTs the PIN to the backend, which returns a 24h signed token. The token
+     is stored under the same key kitchen.js reads, then we open the kitchen. */
+  var KITCHEN_TOKEN_KEY = "cyrils_kitchen_token";
   function setStaffNote(kind, msg) {
     var note = $("#staffNote"); if (!note) return;
     note.hidden = false;
@@ -1053,80 +1052,49 @@
     if (kind) note.classList.add(kind === "ok" ? "is-ok" : "is-err");
     note.textContent = msg;
   }
-  function requestViaSupabase(email) {
-    if (window.supabase && window.supabase.createClient) return Promise.resolve();
-    // Load the Supabase JS SDK on demand, then create the client.
-    return new Promise(function (resolve, reject) {
-      var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js";
-      s.onload = resolve; s.onerror = function () { reject(new Error("sdk")); };
-      document.head.appendChild(s);
-    }).then(function () {
-      window.__sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
-    });
-  }
   function initStaffAuth() {
     var form = $("#staffForm"); if (!form) return;
     var btn = $("#staffSubmit");
-    var DEFAULT_BTN = btn ? btn.textContent : "Email me a sign-in link";
+    var pinInput = $("#staffPin");
+    var DEFAULT_BTN = btn ? btn.textContent : "Unlock kitchen";
+    // Keep the PIN field digits-only.
+    if (pinInput) {
+      pinInput.addEventListener("input", function () {
+        pinInput.value = pinInput.value.replace(/\D/g, "").slice(0, 4);
+      });
+    }
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var email = ($("#staffEmail").value || "").trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        setStaffNote("err", "Please enter a valid email address."); return;
-      }
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Sending…';
-      }
-      setStaffNote("", "Sending sign-in link…");
+      var pin = (pinInput && pinInput.value || "").trim();
+      if (!/^\d{4}$/.test(pin)) { setStaffNote("err", "Enter the 4-digit kitchen PIN."); return; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Unlocking…'; }
+      setStaffNote("", "Verifying PIN…");
 
-      var useSupabase = !!(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
-      var p;
-      if (useSupabase) {
-        p = requestViaSupabase(email).then(function () {
-          return window.__sb.auth.signInWithOtp({
-            email: email,
-            options: { emailRedirectTo: window.location.origin + "/kitchen.html" }
-          });
-        }).then(function (resp) {
-          if (resp && resp.error) throw new Error(resp.error.message || "auth error");
-          return { d: {} };
-        });
-      } else {
-        p = fetch(CONFIG.apiBase + "/api/kitchen/magic-request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Accept": "application/json" },
-          body: JSON.stringify({ email: email })
-        }).then(function (r) {
-          var ct = r.headers.get("content-type") || "";
-          if (ct.indexOf("application/json") === -1) {
-            // Backend not reachable (static host returning HTML) — not a crash.
-            var err = new Error("no-backend"); err.status = r.status; throw err;
-          }
-          return r.json().then(function (d) { return { ok: r.ok, d: d }; });
-        });
-      }
-
-      p.then(function (res) {
-        var d = (res && res.d) || {};
-        // Dev/staging: server returns the link so the flow is testable without email.
-        if (d.devLink) {
-          try { console.log("DEV MAGIC LINK:", d.devLink); } catch (e) {}
-          setStaffNote("ok", "✓ Dev mode — the sign-in link was printed to the browser console. Open it to enter the kitchen.");
-          return;
+      fetch(CONFIG.apiBase + "/api/kitchen/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ pin: pin })
+      }).then(function (r) {
+        var ct = r.headers.get("content-type") || "";
+        if (ct.indexOf("application/json") === -1) {
+          var err = new Error("no-backend"); err.status = r.status; throw err;
         }
-        setStaffNote("ok", "✓ Sign-in link sent! Check your inbox — it expires in 10 minutes.");
-        // Auto-close the modal after a short beat so staff can check their email.
-        setTimeout(function () { closeModal("#staffModal"); }, 2200);
+        return r.json().then(function (d) { return { ok: r.ok, d: d }; });
+      }).then(function (res) {
+        var d = (res && res.d) || {};
+        if (!res.ok || !d.token) throw new Error(d.message || "Incorrect PIN.");
+        try { localStorage.setItem(KITCHEN_TOKEN_KEY, d.token); } catch (err) {}
+        setStaffNote("ok", "✓ Unlocked — opening the kitchen…");
+        setTimeout(function () { window.location.href = "kitchen.html"; }, 700);
       }).catch(function (err) {
         if (err && err.message === "no-backend") {
-          setStaffNote("err", "Staff login isn't connected on this preview. Run the Node server (server.js) or set CYRIL_API_BASE to the deployed backend.");
-        } else if (err && /sdk|failed to fetch|network|load failed/i.test(String(err && err.message))) {
+          setStaffNote("err", "Kitchen login isn't reachable right now. Try again shortly.");
+        } else if (err && /failed to fetch|network|load failed/i.test(String(err && err.message))) {
           setStaffNote("err", "Couldn't reach the login service. Check your connection and try again.");
         } else {
-          setStaffNote("err", (err && err.message) ? err.message : "That email isn't authorized for staff access.");
+          setStaffNote("err", "Incorrect PIN. Please try again.");
         }
+        if (pinInput) { pinInput.value = ""; pinInput.focus(); }
       }).finally(function () {
         if (btn) { btn.disabled = false; btn.textContent = DEFAULT_BTN; }
       });

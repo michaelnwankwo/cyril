@@ -18,8 +18,7 @@ window.CYRIL_API_BASE = (function () {
   if (window.CYRIL_API_BASE) return window.CYRIL_API_BASE;
 
   var host = window.location.hostname || "";
-  var isLocal =
-    host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+  var isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
   if (isLocal) return window.location.protocol + "//" + host + ":3000";
 
   // ┏━━ PRODUCTION ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -28,9 +27,3 @@ window.CYRIL_API_BASE = (function () {
   // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
   return "https://cyril-ab8l.onrender.com";
 })();
-
-/* Optional: Supabase Auth for fully-static magic links.
-   Leave blank — the deployed Node backend handles staff login.
-window.CYRIL_SUPABASE_URL = "";
-window.CYRIL_SUPABASE_ANON_KEY = "";
-*/
