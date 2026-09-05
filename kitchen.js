@@ -265,13 +265,18 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         note.hidden = false; note.textContent = "Please enter a valid email address."; return;
       }
-      btn.disabled = true; btn.textContent = "Sending…";
+      btn.disabled = true; btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Sending…';
       try {
-        await requestMagicLink(email);
+        var data = await requestMagicLink(email);
         note.hidden = false; note.classList.add("is-ok");
-        note.textContent = "✓ If that's an authorized staff email, a sign-in link is on its way. Open it on this device to enter the kitchen.";
+        if (data && data.devLink) {
+          try { console.log("DEV MAGIC LINK:", data.devLink); } catch (e) {}
+          note.textContent = "✓ Dev mode — sign-in link printed to the browser console.";
+        } else {
+          note.textContent = "✓ Sign-in link sent! Check your inbox — it expires in 10 minutes.";
+        }
       } catch (err) {
-        note.hidden = false; note.classList.remove("is-ok"); note.textContent = "Network error — try again.";
+        note.hidden = false; note.classList.remove("is-ok"); note.textContent = (err && err.message) || "Network error — try again.";
       } finally {
         btn.disabled = false; btn.textContent = "Email me a sign-in link";
       }

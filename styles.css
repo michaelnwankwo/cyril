@@ -597,6 +597,13 @@ input, select { font-family: inherit; font-size: 1rem; }
 .staff-auth__note { font-size: .88rem; font-weight: 600; color: var(--ink-500); }
 .staff-auth__note.is-ok { color: var(--green-800); }
 .staff-auth__note.is-err { color: #c0392b; }
+/* Inline loading spinner for buttons */
+.spinner {
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.45); border-top-color: #fff;
+  display: inline-block; animation: spin .7s linear infinite; vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ---------- Toasts ---------- */
 .toast-wrap { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1600;

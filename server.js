@@ -253,9 +253,18 @@ function sendStaffEmail(to, link) {
   return Promise.resolve(true);
 }
 
+// Dev/staging mode: expose the magic link in the API response so it can be tested
+// from the browser console without waiting for email. NEVER enabled in production.
+function isDevAuth(req) {
+  if (process.env.DEV_AUTH === "true") return true;
+  if (process.env.NODE_ENV === "production") return false;
+  const host = (req.get && req.get("host")) || "";
+  return /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
+}
 function handleMagicRequest(req, res) {
   const email = String((req.body && req.body.email) || "").trim().toLowerCase();
   const authorized = KITCHEN_EMAILS.indexOf(email) !== -1;
+  const dev = isDevAuth(req);
   // Always return a generic success to avoid revealing which emails are valid.
   if (authorized) {
     const code = crypto.randomBytes(24).toString("hex");
@@ -265,6 +274,9 @@ function handleMagicRequest(req, res) {
     magicCodes.forEach(function (v, k) { if (v.exp < now) magicCodes.delete(k); });
     const link = publicBaseUrl(req) + "/api/kitchen/magic-verify?code=" + code;
     sendStaffEmail(email, link);
+    const payload = { status: "ok", message: "If that email is authorized, a sign-in link is on its way." };
+    if (dev) payload.devLink = link;   // local/staging console testing only
+    return res.json(payload);
   }
   res.json({ status: "ok", message: "If that email is authorized, a sign-in link is on its way." });
 }

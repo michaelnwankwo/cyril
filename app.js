@@ -1057,8 +1057,11 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         setStaffNote("err", "Please enter a valid email address."); return;
       }
-      if (btn) { btn.disabled = true; btn.textContent = "Sending magic link…"; }
-      setStaffNote("", "Sending magic link…");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner" aria-hidden="true"></span> Sending…';
+      }
+      setStaffNote("", "Sending sign-in link…");
 
       var useSupabase = !!(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
       var p;
@@ -1070,7 +1073,7 @@
           });
         }).then(function (resp) {
           if (resp && resp.error) throw new Error(resp.error.message || "auth error");
-          return { ok: true };
+          return { d: {} };
         });
       } else {
         p = fetch(CONFIG.apiBase + "/api/kitchen/magic-request", {
@@ -1087,8 +1090,17 @@
         });
       }
 
-      p.then(function () {
-        setStaffNote("ok", "✓ Check your email inbox! We've sent a sign-in link — tap it on this device to open the kitchen.");
+      p.then(function (res) {
+        var d = (res && res.d) || {};
+        // Dev/staging: server returns the link so the flow is testable without email.
+        if (d.devLink) {
+          try { console.log("DEV MAGIC LINK:", d.devLink); } catch (e) {}
+          setStaffNote("ok", "✓ Dev mode — the sign-in link was printed to the browser console. Open it to enter the kitchen.");
+          return;
+        }
+        setStaffNote("ok", "✓ Sign-in link sent! Check your inbox — it expires in 10 minutes.");
+        // Auto-close the modal after a short beat so staff can check their email.
+        setTimeout(function () { closeModal("#staffModal"); }, 2200);
       }).catch(function (err) {
         if (err && err.message === "no-backend") {
           setStaffNote("err", "Staff login is configured for the hosted backend. Contact the administrator to enable it on this site, or visit the kitchen directly if you have a link.");
