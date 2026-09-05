@@ -19,10 +19,21 @@
 
   /* ---------------- Config & state ---------------- */
   var CONFIG = {
-    // Backend origin. On a Node host this is the same site; on static hosting
-    // (e.g. Netlify) set window.CYRIL_API_BASE to the deployed server URL.
-    apiBase: window.CYRIL_API_BASE
-      || (window.location.origin && window.location.origin.indexOf("http") === 0 ? window.location.origin : ""),
+    // Backend origin.
+    //  • Explicit override (Netlify/staging): set window.CYRIL_API_BASE.
+    //  • Local development: if the page is opened from a static server such as
+    //    VS Code Live Server (e.g. http://127.0.0.1:5500), talk to the local
+    //    Node backend on :3000 instead — Live Server itself has no /api.
+    //  • Served by the Node app (same origin): the origin below is already :3000.
+    //  • Production (real hostname, not localhost): same-origin by default.
+    apiBase: (function () {
+      if (window.CYRIL_API_BASE) return window.CYRIL_API_BASE;
+      var loc = window.location;
+      var host = loc.hostname || "";
+      var isLocal = host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+      if (isLocal) return loc.protocol + "//" + host + ":3000";
+      return (loc.origin && loc.origin.indexOf("http") === 0) ? loc.origin : "";
+    })(),
     // Optional Supabase Auth for fully-static magic links (set both to enable).
     supabaseUrl: window.CYRIL_SUPABASE_URL || "",
     supabaseAnonKey: window.CYRIL_SUPABASE_ANON_KEY || "",
@@ -1110,8 +1121,8 @@
         setTimeout(function () { closeModal("#staffModal"); }, 2200);
       }).catch(function (err) {
         if (err && err.message === "no-backend") {
-          setStaffNote("err", "Staff login is configured for the hosted backend. Contact the administrator to enable it on this site, or visit the kitchen directly if you have a link.");
-        } else if (err && /sdk|failed to fetch|network/i.test(String(err && err.message))) {
+          setStaffNote("err", "Staff login isn't connected on this preview. Run the Node server (server.js) or set CYRIL_API_BASE to the deployed backend.");
+        } else if (err && /sdk|failed to fetch|network|load failed/i.test(String(err && err.message))) {
           setStaffNote("err", "Couldn't reach the login service. Check your connection and try again.");
         } else {
           setStaffNote("err", (err && err.message) ? err.message : "That email isn't authorized for staff access.");
